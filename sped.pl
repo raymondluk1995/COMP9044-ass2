@@ -335,14 +335,18 @@ sub s_command {
     return ($line);
 }
 
+
+
 ############ SUB ROUTINES ENDS ################
 our $i_flag = 0;
 our $f_flag = 0;
 our $n_flag = 0;
 our @argvs = check_flags(@ARGV);
 
+
 our $EXIT_STATUS = 0;
 our $DELETE_STATUS = 0;
+our $DEL_RANGE_STATUS = 0;
 
 our $sed_commands = chomp_comma($argvs[0]);
 our @inter_commands = get_commands($sed_commands); 

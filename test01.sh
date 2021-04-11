@@ -2,18 +2,18 @@
 
 export PATH=$PATH:$(pwd)
 
-seq 1 5 | sped 3q
+seq 1 5 | sped.pl 3q
 echo "---------------"
-seq 10 15 | sped /.1/q 
+seq 10 15 | sped.pl /.1/q 
 echo "---------------"
-seq 1 5 | sped 2p 
+seq 1 5 | sped.pl 2p 
 echo "---------------"
-seq 1 5|sped 4d
+seq 1 5|sped.pl 4d
 echo "---------------"
-seq 1 5|2041 sped -n 3p
+seq 1 5|sped.pl -n 3p
 echo "---------------"
-seq 1 5|sped 's/[15]/zzz/'
+seq 1 5|sped.pl 's/[15]/zzz/'
 echo "---------------"
-seq 1 5| sped '4q;/2/d'
+seq 1 5| sped.pl '4q;/2/d'
 echo "---------------"
 seq 1 5 | sed '4q;/2/d;3q'

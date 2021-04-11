@@ -19,7 +19,7 @@ sub check_flags {
             elsif ($item eq "-f"){
                 $f_flag = 1;
             }
-            elsif ($item eq "n"){
+            elsif ($item eq "-n"){
                 $n_flag = 1;
             }
             else{

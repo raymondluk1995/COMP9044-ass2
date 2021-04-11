@@ -159,8 +159,8 @@ sub commands_with_type {
 # Execute a command
 sub exec_cmd {
     my ($item,$line) = @_;
-    $cmd = $item -> [0];
-    $type = $item -> [1];
+    my $cmd = $item -> [0];
+    my $type = $item -> [1];
 
     if ($type eq "q"){
         &q_command($cmd,$line);
@@ -217,6 +217,28 @@ sub p_command {
 # delete command execution
 sub d_command {
     my ($cmd,$line) = @_;
+
+    # if ($cmd =~ /^(\d+),(\d+)d$/){
+    #     my $start = $1;
+    #     my $end = $2;
+
+    #     # If start is greater than end, we only delete the $start line.
+    #     if ($start >= $end && $start == $LINE_NUM){
+    #         $DELETE_STATUS = 1;
+    #         return;
+    #     }
+
+    #     if ($start == $LINE_NUM && $DEL_RANGE_STATUS == 0){
+    #         $DEL_RANGE_STATUS = 1;
+    #     }
+
+    #     if (($end +1 ) == $LINE_NUM && $DEL_RANGE_STATUS == 1){
+    #         $DEL_RANGE_STATUS = 0;
+    #     }
+    # }
+
+
+
     if ($cmd =~ /^(\d+)d$/){
         if ($1 == $LINE_NUM){
             $DELETE_STATUS = 1;
@@ -336,6 +358,129 @@ sub s_command {
 }
 
 
+sub update_del_lines {
+    my (@commands) = @_;
+    foreach my $item (@commands){
+        my $cmd = $item ->[0];
+        my $type = $item -> [1];
+
+        if ($type eq 'd'){
+            # CASE 01: digit,digit
+            if ($cmd =~ /^(\d+),(\d+)d$/){
+                my $start = $1;
+                my $end = $2;
+
+                # If start is greater than end, we only delete the $start line.
+                if ($start >= $end){
+                    $del_lines{$start} = 1;
+                    next;
+                }
+
+                my @range = ($start..$end);
+                foreach my $i (@range){
+                    $del_lines{$i} = 1;
+                }
+            }
+            # CASE 02: digit, regex
+            elsif ($cmd =~ /^(\d+),\/(.*)\/d$/){
+                my $start = $1;
+                my $end_regex = $2;
+
+                my $end = -1;
+                
+                # $i represents line number instead of index here
+                for (my $i=$start; $i<$lines_len+1;$i+=1){
+                    my $line = $lines[$i-1];
+                    if ($line =~ /$end_regex/){
+                        $end = $i;
+                        last;
+                    }
+                }
+
+                if ($end == -1){
+                    $end = $lines_len;
+                }
+
+                # If start is greater than end, we only delete the $start line.
+                if ($start >= $end){
+                    $del_lines{$start} = 1;
+                    next;
+                }   
+                
+
+                my @range = ($start..$end);
+                foreach my $i (@range){
+                    $del_lines{$i} = 1;
+                }
+            }
+            # CASE 03: regex, digit
+            elsif ($cmd =~ /^\/(.*)\/,(\d+)d$/){
+                my $start_regex = $1;
+                my $end = $2;
+                
+                my $start = -1;
+
+                # $i represents line number instead of index here
+                for (my $i=$end;$i>0;$i-=1){
+                    my $line = $lines[$i-1];
+                    if ($line =~ /$start_regex/){
+                        $start = $i;
+                        last;
+                    }
+                }
+
+                if ($start != -1){
+                    my @range = ($start..$end);
+                    foreach my $i (@range){
+                        $del_lines{$i} = 1;
+                    }
+                }
+
+            }
+            # CASE 04: regex, regex
+            elsif ($cmd =~ /^\/(.*)\/,\/(.*)\/d$/){
+                my $start_regex = $1;
+                my $end_regex = $2;
+
+                my $start = -1;
+                my $end = -1;
+
+                # $i represents line number instead of index here
+                for (my $i=1; $i < $lines_len+1; $i+=1){
+                    my $line = $lines[$i-1];
+                    if ($line =~ /$start_regex/){
+                        $start = $i;
+                        last;
+                    }
+                }
+
+                if ($start == -1){
+                    $start = 1;
+                }
+
+                for (my $i=$start; $i < $lines_len +1; $i +=1){
+                    my $line = $lines[$i-1];
+                    if ($line =~ /$end_regex/){
+                        $end = $i;
+                        last;
+                    }
+                }
+
+                if ($end == -1){
+                    $end = $lines_len;
+                }
+
+            }
+
+
+
+
+        }
+
+        
+    }
+}
+
 
 ############ SUB ROUTINES ENDS ################
 our $i_flag = 0;
@@ -348,6 +493,8 @@ our $EXIT_STATUS = 0;
 our $DELETE_STATUS = 0;
 our $DEL_RANGE_STATUS = 0;
 
+our %del_lines;
+
 our $sed_commands = chomp_comma($argvs[0]);
 our @inter_commands = get_commands($sed_commands); 
 
@@ -355,7 +502,22 @@ my @commands = commands_with_type(@inter_commands);
 
 our $LINE_NUM = 1;
 
-while ($line = <STDIN>){
+
+our @lines; 
+
+while (my $line = <STDIN>){
+    push(@lines,$line);
+}
+
+our $lines_len = @lines;
+
+
+# Update the del_lines hash 
+# TODO: update_del_lines(@commands);
+
+
+
+foreach my $line (@lines) {
     chomp $line;
     $EXIT_STATUS = 0;
     $DELETE_STATUS = 0;
@@ -363,7 +525,7 @@ while ($line = <STDIN>){
         $line = &exec_cmd($item,$line);
     }
 
-    if ($n_flag == 0 && $DELETE_STATUS == 0){
+    if ($n_flag == 0 && $DELETE_STATUS == 0 && $DEL_RANGE_STATUS == 0){
         print("$line\n");
     }
 

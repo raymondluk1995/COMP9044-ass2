@@ -1,0 +1,89 @@
+############## THE RECORD OF DELETE ##################
+
+1. digit - digit 
+
+(1) exist - exist: 
+i. $start <= $end delete the corresponding part
+ii. $start > $end, only delete the $start line
+
+(2) non-exist - exist: 
+i. If $start is 0, invalid command error
+ii. If $start is too big, delete nothing
+iii. If $start is a negative number, usage error
+
+(3) exist - non-exist:
+i. If $end is too big, assume it is valid. 
+ii. If $end is negative, invalid command error 
+
+(4) non-exist - non-exist 
+i. delete nothing 
+
+2. digit - regex 
+(1) exist - exist: 
+i. Delete from $start, and to the first occurence of $endRegex
+
+(2) non-exist - exist:
+i. If $start is too big, delete nothing
+ii. invalid command error 
+iii. If $end is negative, invalid command error 
+
+(3) exist - non-exist 
+i. Delete since $start 
+
+(4) non-exist - non-exist 
+i. Delete nothing 
+
+3. regex -digit 
+(1) exist - exist:
+i. Delete from the first occurence of $start_regex to the $end. 
+
+(2) non-exist - exist:
+i. Delete nothing. 
+
+(3) exist - non-exist:
+i. If $end is 0, delete all lines matched the $start_regex 
+ii. If $end is too big, delete everything since the first occurence of $start_regex 
+
+(4) non-exist - non-exist 
+i. Delete nothing 
+
+4. regex - regex 
+(1) exist -exist 
+i. For all possible ranges, delete them all. 
+
+For the last range, if the $start_regex can match, keep deleting until the $end_regex is met. 
+
+For example, running seq 1 30 | 2041 sped '/2/,/4/d' will have:
+1
+5
+6
+7
+8
+9
+10
+11
+15
+16
+17
+18
+19
+
+
+seq 1 30 | 2041 sped '/2/,/18/d':
+1
+19
+
+(2) non-exist - exist:
+i. Delete nothing 
+
+(3) exist - non-exist: 
+i. Delete from the first occurence of $start_regex 
+
+(4) non-exist - non-exist: 
+i. Delete nothing. 
+
+
+
+
+
+#########################################################

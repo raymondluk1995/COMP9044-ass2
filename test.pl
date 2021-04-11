@@ -1,7 +1,9 @@
 #!/usr/bin/perl -w
 
-my $str = "2,/3/d";
+# $str = "abcd123";
 
-$str =~ /^(.*),(.*)d$/;
+$i = -1;
 
-print("$1 $2\n");
+if ($i == -1){
+    print("here\n");
+}

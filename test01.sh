@@ -10,6 +10,8 @@ seq 1 5 | sped 2p
 echo "---------------"
 seq 1 5|sped 4d
 echo "---------------"
+seq 1 5|2041 sped -n 3p
+echo "---------------"
 seq 1 5|sped 's/[15]/zzz/'
 echo "---------------"
 seq 1 5| sped '4q;/2/d'

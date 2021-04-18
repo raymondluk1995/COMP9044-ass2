@@ -1,0 +1,1 @@
+1. When I extract a regex pattern out, I must use the slash_meta() function to make the "/" inside of it to be "\/".

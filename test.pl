@@ -1,9 +1,7 @@
 #!/usr/bin/perl -w
 
-# $str = "abcd123";
+my $str = "3,/blah\/klah\/dlah/d";
 
-$i = -1;
+$str =~ /^(\d+),\/(.*)\/d$/;
 
-if ($i == -1){
-    print("here\n");
-}
+print("$2\n");

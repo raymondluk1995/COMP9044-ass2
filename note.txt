@@ -24,8 +24,7 @@ i. Delete from $start, and to the first occurence of $endRegex
 
 (2) non-exist - exist:
 i. If $start is too big, delete nothing
-ii. invalid command error 
-iii. If $end is negative, invalid command error 
+ii. If $start is zero, delete from the first line to the first matched line.
 
 (3) exist - non-exist 
 i. Delete since $start 

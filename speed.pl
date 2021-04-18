@@ -428,9 +428,6 @@ sub s_command {
     my $pat1 = $patterns[0];
     my $pat2 = $patterns[1];
 
-    $pat1 = slash_meta($pat1);
-    $pat2 = slash_meta($pat2);
-
     if ($cmdChars[-1] eq 'g'){
         $line =~ s/$pat1/$pat2/g;
     }
@@ -464,7 +461,7 @@ sub update_del_lines {
             # 02 Delete lines matched the regex
             elsif ($cmd =~ /^\/([^,]*)\/d$/){
                 my $pattern = $1;
-                $pattern = slash_meta($pattern);
+                # $pattern = slash_meta($pattern);
                 for (my $i=0; $i<$lines_len; $i++){
                     my $line = $lines[$i];
                     if ($line =~ /$pattern/){
@@ -525,7 +522,7 @@ sub update_del_lines {
             elsif ($cmd =~ /^(\d+),\/(.*)\/d$/){
                 my $start = $1;
                 my $end_regex = $2;
-                $end_regex = slash_meta($end_regex);
+                # $end_regex = slash_meta($end_regex);
 
                 if ($start > 0 and $start <= $lines_len){ # If $start is legal
                     my $end = &find_end_by_digit($start,$end_regex);
@@ -556,13 +553,13 @@ sub update_del_lines {
             # 06 Delete a range: REGEX - DIGIT
             elsif ($cmd =~ /^\/(.*)\/,(\d+)d$/){
                 my $start_regex = $1;
-                $start_regex = slash_meta($start_regex);
+                # $start_regex = slash_meta($start_regex);
                 my $end = $2;
 
                 if ($end>0 and $end<=$lines_len){ # If $end is legal
                     my $start = find_start_by_digit($start_regex,$end);
                     if ($start>0 and $start<=$end){ # If $start exists
-                        for (my $i = 0; $i<$end+1;$i++){
+                        for (my $i = $start; $i<$end+1;$i++){
                             $del_lines{$i} = 1;
                         }
                     }
@@ -692,8 +689,8 @@ while (my $line = <STDIN>){
 
 $LINE_NUM = 1;
 our $lines_len = @lines;
-&update_del_lines(@commands);
 
+&update_del_lines(@commands);
 
 # Update the del_lines hash 
 # TODO: update_del_lines(@commands);

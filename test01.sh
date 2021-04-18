@@ -1,4 +1,7 @@
 #!/bin/dash 
+
+# The tests are basically from the subset 0 in the project specification
+
 clear
 export PATH=$PATH:$(pwd)
 

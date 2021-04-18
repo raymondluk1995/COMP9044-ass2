@@ -98,7 +98,7 @@ sub get_command_type {
     elsif ($cmd =~ /p$/){
         return ("p");
     }
-    elsif ($cmd =~ /^s/){
+    elsif ($cmd =~ /^(\d+)?s/ or $cmd =~ /^(\/.*\/)?s/){
         return ("s");
     }
     else{
@@ -184,7 +184,27 @@ sub exec_cmd {
         &d_command($cmd,$line);
     }
     elsif ($type eq "s"){
-        $line = &s_command($cmd,$line);
+        if ($cmd =~ /^s/){
+            $line = &s_command($cmd,$line);
+        }
+        elsif ($cmd =~ /^(\d+)(s.*)$/){
+            my $targetLine = $1;
+            my $sCmd = $2;
+            if ($LINE_NUM == $targetLine){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        elsif ($cmd =~ /^\/(.*?)\/(s.*)$/){
+            my $targetRegex = $1;
+            my $sCmd = $2;
+            if ($line =~ /$targetRegex/){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        else{
+            print("speed: command line: invalid command\n");
+            exit 1;
+        }
     }
     # TODO: D_COMMAND, P_COMMAND ETC.
     return ($line);

@@ -232,6 +232,9 @@ sub p_command {
             print("$line\n");
         }
     }
+    elsif ($cmd =~ /^p$/){
+        print("$line\n");
+    }
     else{
         print("speed: command line: invalid command\n");
         exit 1;

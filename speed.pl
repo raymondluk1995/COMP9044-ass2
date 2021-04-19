@@ -986,6 +986,10 @@ sub update_hash_lines {
 
 sub check_quit_line {
     my ($line,@commands) = @_;
+
+    # &print_commands(@commands);
+    my $flag = 0;
+
     foreach my $item (@commands){
         my $cmd = $item->[0];
         my $type = $item->[1];
@@ -993,21 +997,28 @@ sub check_quit_line {
             if ($cmd =~ /^(\d+)q$/){
                 my $num = $1;
                 if ($LINE_NUM == $num){
-                    return 1;
+                    $flag = 1;
                 }
             }
             elsif ($cmd =~ /^\/(.*)\/q$/) {
                 my $pattern = $1;
                 if ($line =~ /$pattern/){
-                    return 1;
+                    $flag = 1;
                 }
             }
             else {
                 print("speed: command line: invalid command\n");
                 exit 1;
             }
-            return 0;
         }
+    }
+    return ($flag);
+}
+
+sub print_commands {
+    my (@commands) = @_;
+    foreach $item (@commands){
+        print("$item->[0]   $item->[1]\n");
     }
 }
 
@@ -1036,7 +1047,9 @@ our $LINE_NUM = 1;
 our @lines; 
 
 while (my $line = <STDIN>){
+    # print("line num now is $LINE_NUM\n");
     my $flag = &check_quit_line($line,@commands);
+    # print("The flag now is $flag\n");
     push(@lines,$line);
     if ($flag == 1){
         $quit_line_num = $LINE_NUM;

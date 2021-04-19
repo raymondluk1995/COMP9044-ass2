@@ -102,7 +102,8 @@ sub get_command_type {
         return ("s");
     }
     else{
-        return ("default");
+        print("speed: command line: invalid command\n");
+        exit 1;
     }
 }
 
@@ -1046,32 +1047,136 @@ our %print_lines;
 our %sub_lines;
 our $quit_line_num = -1;
 
-our $sed_commands = chomp_semicolon($argvs[0]);
-our @inter_commands = get_commands($sed_commands); 
 
-my @commands = commands_with_type(@inter_commands);
+# When the input is coming from STDIN
+if ($f_flag == 0 and @argvs==1){
+    our $sed_commands = chomp_semicolon($argvs[0]);
+    our @inter_commands = get_commands($sed_commands); 
+    our @commands = commands_with_type(@inter_commands);
+    our $LINE_NUM = 1;
+    our @lines; 
 
-our $LINE_NUM = 1;
-our @lines; 
-
-while (my $line = <STDIN>){
-    # print("line num now is $LINE_NUM\n");
-    my $flag = &check_quit_line($line,@commands);
-    # print("The flag now is $flag\n");
-    push(@lines,$line);
-    if ($flag == 1){
-        $quit_line_num = $LINE_NUM;
-        last;
+    while (my $line = <STDIN>){
+        my $flag = &check_quit_line($line,@commands);
+        # print("The flag now is $flag\n");
+        push(@lines,$line);
+        if ($flag == 1){
+            $quit_line_num = $LINE_NUM;
+            last;
+        }
+        $LINE_NUM += 1;
     }
-    $LINE_NUM += 1;
+}
+elsif($f_flag==0 and @argvs>1){
+    our $sed_commands = chomp_semicolon($argvs[0]);
+    our @inter_commands = get_commands($sed_commands); 
+    our @commands = commands_with_type(@inter_commands);
+    our $LINE_NUM = 1;
+    our @lines; 
+
+    for (my $i=1; $i<@argvs;$i++){
+        my $input_file = $argvs[$i];
+        unless (-r $input_file){
+            print("speed: error\n");
+            exit 1;
+        }
+
+        open ($FH,'<', $input_file);
+        my @input_lines = <$FH>;
+        close ($FH);
+
+        push(@lines,@input_lines);
+    }
+
+    foreach my $line (@lines){
+        my $flag = &check_quit_line($line,@commands);
+        if ($flag == 1){
+            $quit_line_num = $LINE_NUM;
+            last;
+        }
+        $LINE_NUM += 1;
+    }
+}
+elsif ($f_flag==1 and @argvs ==0){ 
+    print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+    exit 1;
+}
+# Getting input from STDIN now
+elsif ($f_flag == 1 and @argvs == 1) {
+    open($FH,'<',$argvs[0]);
+    my @f_lines = <$FH>;
+    close ($FH);
+
+    my $cmd_line = "";
+    foreach my $item (@f_lines){
+        chomp $item;
+        $cmd_line = $cmd_line . $item . ";";
+    }
+    chop($cmd_line);
+    our $sed_commands = chomp_semicolon($cmd_line);
+    our @inter_commands = get_commands($sed_commands); 
+    our @commands = commands_with_type(@inter_commands);
+    our $LINE_NUM = 1;
+    our @lines; 
+
+    while (my $line = <STDIN>){
+        # print("line num now is $LINE_NUM\n");
+        my $flag = &check_quit_line($line,@commands);
+        # print("The flag now is $flag\n");
+        push(@lines,$line);
+        if ($flag == 1){
+            $quit_line_num = $LINE_NUM;
+            last;
+        }
+        $LINE_NUM += 1;
+    }
+}
+# Getting input from files
+elsif ($f_flag == 1 and @argvs > 1){
+    open($FH,'<',$argvs[0]);
+    my @f_lines = <$FH>;
+    close ($FH);
+
+    my $cmd_line = "";
+    foreach my $item (@f_lines){
+        chomp $item;
+        $cmd_line = $cmd_line . $item . ";";
+    }
+    chop($cmd_line);
+    our $sed_commands = chomp_semicolon($cmd_line);
+    our @inter_commands = get_commands($sed_commands); 
+    our @commands = commands_with_type(@inter_commands);
+    our $LINE_NUM = 1;
+    our @lines; 
+
+    for (my $i=1; $i<@argvs;$i++){
+        my $input_file = $argvs[$i];
+        unless (-r $input_file){
+            print("speed: error\n");
+            exit 1;
+        }
+
+        open ($FH,'<', $input_file);
+        my @input_lines = <$FH>;
+        close ($FH);
+
+        push(@lines,@input_lines);
+    }
+
+    foreach my $line (@lines){
+        my $flag = &check_quit_line($line,@commands);
+        if ($flag == 1){
+            $quit_line_num = $LINE_NUM;
+            last;
+        }
+        $LINE_NUM += 1;
+    }
+
 }
 
 $LINE_NUM = 1;
 our $lines_len = @lines;
-
 &update_hash_lines(@commands);
-
-
 
 # Update the del_lines hash 
 # TODO: update_del_lines(@commands);
@@ -1096,4 +1201,3 @@ foreach my $line (@lines) {
 
     $LINE_NUM +=1;
 }
-

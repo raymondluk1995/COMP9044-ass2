@@ -1,3 +1,8 @@
+cd Desktop/COMP9044/ass2/COMP9044-ass2 
+
+
+
+
 ############## THE RECORD OF DELETE ##################
 
 1. digit - digit 
@@ -35,6 +40,9 @@ i. Delete nothing
 3. regex -digit 
 (1) exist - exist:
 i. Delete from the first occurence of $start_regex to the $end. After that, keep deleting the lines matched the $start_regex
+
+
+
 
 (2) non-exist - exist:
 i. Delete nothing. 

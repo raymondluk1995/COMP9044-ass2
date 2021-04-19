@@ -173,6 +173,7 @@ sub exec_cmd {
     my ($item,$line) = @_;
     my $cmd = $item -> [0];
     my $type = $item -> [1];
+    chomp $cmd;
 
     if ($type eq "q"){
         &q_command($cmd,$line);
@@ -184,9 +185,15 @@ sub exec_cmd {
         &d_command($cmd,$line);
     }
     elsif ($type eq "s"){
+        if (!exists($sub_lines{$LINE_NUM})){ # No need to substitute
+            return ($line);
+        } 
+
+        # 01 If all lines need to be substitued
         if ($cmd =~ /^s/){
             $line = &s_command($cmd,$line);
         }
+        # 02 Subsitute a single line - digit
         elsif ($cmd =~ /^(\d+)(s.*)$/){
             my $targetLine = $1;
             my $sCmd = $2;
@@ -194,10 +201,46 @@ sub exec_cmd {
                 $line = &s_command($sCmd,$line);
             }
         }
+        # 03 Substitute lines matched the regex
         elsif ($cmd =~ /^\/(.*?)\/(s.*)$/){
             my $targetRegex = $1;
             my $sCmd = $2;
             if ($line =~ /$targetRegex/){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 04 Substitute the last line
+        elsif ($cmd =~ /^\$(s.*)$/){
+            my $sCmd = $1;
+            if ($LINE_NUM == $lines_len){
+               $line = &s_command($sCmd,$line); 
+            }
+        }
+        # 05 Substitute a range: DIGIT - DIGIT
+        elsif ($cmd =~ /^(\d+),(\d+)(s.*)$/){
+            my $sCmd = $3;
+            if (exists($sub_lines{$LINE_NUM}{$sCmd})){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 06 Substitute a range: DIGTI - REGEX
+        elsif ($cmd =~ /(\d+),\/(.*?)\/(s.*)$/){
+            my $sCmd = $3;
+            if (exists($sub_lines{$LINE_NUM}{$sCmd})){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 07 Substitute a range: REGEX - DIGIT
+        elsif ($cmd =~ /^\/(.*?)\/,(\d+)(s.*)$/){
+            my $sCmd = $3;
+            if (exists($sub_lines{$LINE_NUM}{$sCmd})){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 08 Substitute a range: REGEX -REGEX
+        elsif ($cmd =~ /^\/(.*?)\/,\/(.*?)\/(s.*)$/){
+            my $sCmd = $3;
+            if (exists($sub_lines{$LINE_NUM}{$sCmd})){
                 $line = &s_command($sCmd,$line);
             }
         }
@@ -213,51 +256,16 @@ sub exec_cmd {
 # quit command execution
 sub q_command {
     my ($cmd,$line) = @_;
-    chomp $cmd;
-    if ($cmd =~ /^(\d+)q$/){
-        if ($1 == $LINE_NUM){
-            $EXIT_STATUS = 1;
-        }
-    }
-    elsif ($cmd =~ /^\/(.*)\/q$/){
-        if ($line =~ /$1/){
-            $EXIT_STATUS = 1;
-        }
-    }
-    elsif ($cmd =~ /^\$q$/){
-        return ; # Quit at the last line, do nothing
-    }
-    else{
-        print("speed: command line: invalid command\n");
-        exit 1;
+    if ($LINE_NUM == $quit_line_num){
+        $EXIT_STATUS = 1;
     }
 }
 
 # print command execution
 sub p_command {
     my ($cmd,$line) = @_;
-    chomp $cmd;
-    if ($cmd =~ /^(\d+)p$/){
-        if ($1 == $LINE_NUM){
-            print("$line\n");
-        }
-    }
-    elsif ($cmd =~ /^\/(.*)\/p$/){
-        if ($line =~ /$1/){
-            print("$line\n");
-        }
-    }
-    elsif ($cmd =~ /^\$p$/){
-        if ($LINE_NUM == $lines_len){
-            print("$line\n");
-        }
-    }
-    elsif ($cmd =~ /^p$/){
+    if (exists($print_lines{$LINE_NUM})){
         print("$line\n");
-    }
-    else{
-        print("speed: command line: invalid command\n");
-        exit 1;
     }
 }
 
@@ -441,8 +449,21 @@ sub s_command {
     return ($line);
 }
 
+sub insert_to_sub_lines {
+    my ($lineNum, $cmd) = @_;
+    if (!exists($sub_lines{$lineNum})){
+        my %cmds_hash = ($cmd=>1);
+        $sub_lines{$lineNum} = \%cmds;
+    }
+    else{
+        my %cmds_hash = %{$sub_lines{$lineNum}};
+        $cmds_hash{$cmd} = 1;
+        $sub_lines{$lineNum} = \%cmds;
+    }
+}
 
-sub update_del_lines {
+
+sub update_hash_lines {
     my (@commands) = @_;
     foreach my $item (@commands){
         my $cmd = $item ->[0];
@@ -450,7 +471,7 @@ sub update_del_lines {
 
         if ($type eq 'd'){
             # 01 Delete a single line - digit
-            if ($cmd =~ /^(\d+)d$/){ # 01 Delete a single line - digit
+            if ($cmd =~ /^(\d+)d$/){ 
                 my $num = $1;
                 if ($num == 0){
                     print("speed: command line: invalid command\n");
@@ -603,58 +624,392 @@ sub update_del_lines {
                     }
                 }
             }
+            # 08 Delete all lines
+            elsif ($cmd =~ /^d$/){
+                for (my $i=0;$i<$lines_len;$i++){
+                    $del_lines{$i+1} = 1;
+                }
+            }
             else{
                 print("speed: command line: invalid command\n");
                 exit 1;
             }
-        }  
-    }
-}
-
-# TODO: find the lowest number that match the quite line number
-sub get_cmd_q_line {
-    my ($cmd) = @_;
-    if ($cmd =~ /(\d+)q/){
-        return ($1);
-    }
-    elsif($cmd =~ /^\/(.*)\/q$/){
-        my $pattern = $1;
-        my $i = 1;
-        # We assume the input does not exceed 10000 lines
-        while ($i < 100000){
-            if ($i =~ /$pattern/){
-                return ($i);
+        }
+        elsif ($type eq 'p'){
+            # 01 Print a single line - digit
+            if ($cmd =~ /^(\d+)p$/){ 
+                my $num = $1;
+                if ($num == 0){
+                    print("speed: command line: invalid command\n");
+                    exit 1;
+                }
+                $print_lines{$num} = 1;
             }
-            $i +=1;
+            # 02 Print lines matched the regex
+            elsif ($cmd =~ /^\/([^,]*)\/p$/){
+                my $pattern = $1;
+                # $pattern = slash_meta($pattern);
+                for (my $i=0; $i<$lines_len; $i++){
+                    my $line = $lines[$i];
+                    if ($line =~ /$pattern/){
+                        $print_lines{$i+1} = 1;
+                    }
+                }
+            }
+            # 03 Print the last line
+            elsif ($cmd =~ /^\$p$/){
+                $print_lines{$lines_len} = 1;
+            }
+            # 04 Print a range: DIGIT - DIGIT 
+            elsif ($cmd =~ /^(\d+),(\d+)p$/){
+                my $start = $1;
+                my $end = $2;
+                if ($start > $end and $end <= $lines_len and $start <= $lines_len and $start > 0 and $end > 0){ # Only print the $start line
+                    $print_lines{$start} = 1;
+                }
+                elsif ($end < 0){
+                    print("speed: command line: invalid command\n");
+                    exit 1;
+                }
+                elsif ($start <= $end and $end <= $lines_len and $start > 0 and $end > 0){ # $start and $end exist
+                    for (my $i=$start;$i<$end+1;$i++){
+                        $print_lines{$i} = 1;
+                    }
+                }
+                elsif ($start == 0 and $end > 0 and $end <= $lines_len){
+                    print("speed: command line: invalid command\n");
+                    exit 1;
+                }
+                elsif ($start < 0 and $end > 0 and $end <= $lines_len){
+                    print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+                    exit 1;
+                }
+                elsif ($start > $end and $start > $lines_len){ # If $start is too big
+                    next;
+                }
+                elsif ($start>0 and $start<=$lines_len and $end > $lines_len){
+                    for (my $i=$start;$i<$lines_len+1;$i++){
+                        $print_lines{$i} = 1;
+                    }
+                }
+                elsif ($start==0 and $end==0){
+                    print("speed: command line: invalid command\n");
+                    exit 1;
+                }
+                elsif ($start<0){
+                    print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+                    exit 1;
+                }
+                elsif ($start>$lines_len and $end>$lines_len){
+                    next;
+                }
+            }
+            # 05 Print a range: DIGIT- REGEX
+            elsif ($cmd =~ /^(\d+),\/(.*)\/p$/){
+                my $start = $1;
+                my $end_regex = $2;
+                # $end_regex = slash_meta($end_regex);
+
+                if ($start > 0 and $start <= $lines_len){ # If $start is legal
+                    my $end = &find_end_by_digit($start,$end_regex);
+                    if ($end>0 and $end<=$lines_len and $end >= $start){ # $end exists
+                        for (my $i=$start;$i<$end+1;$i++){
+                            $print_lines{$i} = 1;
+                        }
+                    }
+                    else{ # $end doesn't exist, print since $start
+                        for (my $i=$start;$i<$lines_len+1;$i++){
+                            $print_lines{$i} = 1;
+                        }
+                    }
+                }
+                elsif ($start == 0){
+                    my $end = find_end_without_start_digit($end_regex);
+                    if ($end == -1){ # If no lines matched, print everything
+                        $end = $lines_len;
+                    }
+                    for (my $i=1; $i<$end+1;$i++){
+                        $print_lines{$i} = 1;
+                    }
+                }
+                elsif ($start > $lines_len){ # If $start is too big, print nothing
+                    next;
+                }
+            }
+            # 06 Print a range: REGEX - DIGIT
+            elsif ($cmd =~ /^\/(.*)\/,(\d+)p$/){
+                my $start_regex = $1;
+                # $start_regex = slash_meta($start_regex);
+                my $end = $2;
+
+                if ($end>0 and $end<=$lines_len){ # If $end is legal
+                    my $start = find_start_by_digit($start_regex,$end);
+                    if ($start>0 and $start<=$end){ # If $start exists
+                        for (my $i = $start; $i<$end+1;$i++){
+                            $print_lines{$i} = 1;
+                        }
+                    }
+                    else{ # If $start does not exist, print nothing
+                        next;
+                    }
+                }
+                elsif ($end == 0){ # Print all lines matched the $start_regex
+                    for (my $i=0; $i<$lines_len;$i++){
+                        my $line = $lines[$i];
+                        if ($line =~ /$start_regex/){
+                            $print_lines{$i+1} = 1;
+                        }
+                    }
+                }
+                elsif ($end > $lines_len){ # Substitute all lines since the first match of $start_regex
+                    my $start = find_start_without_end_digit($start_regex);
+                    for (my $i=$start;$i<$lines_len+1;$i++){
+                        $print_lines{$i} = 1;
+                    }
+                }
+            }
+            # 07 Print a range: REGEX - REGEX
+            elsif ($cmd =~ /^\/(.*)\/,\/(.*)\/p$/){
+                my $start_regex = $1;
+                my $end_regex = $2;
+                my $print_flag = 0;
+
+                for (my $i=0;$i<$lines_len;$i++){
+                    my $line = $lines[$i];
+                    if ($line =~ /$start_regex/ and $print_flag == 0){
+                        $print_flag = 1;
+                    }
+                    elsif ($line =~ /$end_regex/ and $print_flag == 1){
+                        $print_lines{$i+1} = 1;
+                        $print_flag = 0;
+                    }
+
+                    if ($print_flag == 1){
+                        $print_lines{$i+1} = 1;
+                    }
+                }
+            } 
+            # 08 Print all lines
+            elsif ($cmd =~ /^p$/){
+                for (my $i=0; $i<$lines_len;$i++){
+                    $print_lines{$i+1} = 1;
+                }
+            }
+            else{
+                print("speed: command line: invalid command\n");
+                exit 1;
+            }
         }
-        if ($i == 100000){
-            return (-1);
+        elsif ($type eq 's'){
+            # 01 If all lines need to be substitued
+            if ($cmd =~ /^s/){
+                for (my $i=1; $i<$lines_len+1;$i++){
+                    &insert_to_sub_lines($i,$cmd);
+                }
+            }
+            # 02 Subsitute a single line - digit
+            elsif ($cmd =~ /^(\d+)(s.*)$/){
+                my $num = $1;
+                my $sCmd = $2;
+
+                if ($num == 0){
+                    print("speed: command line: invalid command\n");
+                    exit 1; 
+                }
+                elsif ($num < 0){
+                    print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+                    exit 1;
+                }
+                elsif ($num > $lines_len){
+                    next;
+                }
+                else{
+                    &insert_to_sub_lines($num,$sCmd);
+                }
+            }
+            # 03 Substitute lines matched the regex
+            elsif ($cmd =~ /^\/(.*?)\/(s.*)$/){
+                my $regex = $1;
+                my $sCmd = $2;
+
+                for (my $i=0; $i<$lines_len;$i++){
+                    my $line = $lines[$i];
+                    if ($line =~ /$regex/){
+                        &insert_to_sub_lines($i+1,$sCmd);
+                    }
+                }
+            }
+            # 04 Substitute the last line
+            elsif ($cmd =~ /^\$(s.*)$/){
+                my $sCmd = $1;
+                &insert_to_sub_lines($lines_len,$sCmd);
+            }
+            # 05 Substitute a range: DIGIT - DIGIT
+            elsif ($cmd =~ /^(\d+),(\d+)(s.*)$/){
+                my $start = $1;
+                my $end = $2;
+                my $sCmd = $3;
+
+                if ($start > $end and $end <= $lines_len and $start <= $lines_len and $start > 0 and $end > 0){ # Only substitute the $start line
+                    &insert_to_sub_lines($start,$sCmd);
+                }
+                elsif ($end < 0){
+                    print("speed: command line: invalid command\n");
+                    exit 1;
+                }
+                elsif ($start <= $end and $end <= $lines_len and $start > 0 and $end > 0){ # $start and $end exist
+                    for (my $i=$start;$i<$end+1;$i++){
+                        &insert_to_sub_lines($i,$sCmd);
+                    }
+                }
+                elsif ($start == 0 and $end > 0 and $end <= $lines_len){
+                    print("speed: command line: invalid command\n");
+                    exit 1;
+                }
+                elsif ($start < 0 and $end > 0 and $end <= $lines_len){
+                    print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+                    exit 1;
+                }
+                elsif ($start > $end and $start > $lines_len){ # If $start is too big
+                    next;
+                }
+                elsif ($start>0 and $start<=$lines_len and $end > $lines_len){
+                    for (my $i=$start;$i<$lines_len+1;$i++){
+                        &insert_to_sub_lines($i,$sCmd);
+                    }
+                }
+                elsif ($start==0 and $end==0){
+                    print("speed: command line: invalid command\n");
+                    exit 1;
+                }
+                elsif ($start<0){
+                    print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+                    exit 1;
+                }
+                elsif ($start>$lines_len and $end>$lines_len){
+                    next;
+                }
+            }
+            # 06 Substitute a range: DIGTI - REGEX
+            elsif ($cmd =~ /(\d+),\/(.*?)\/(s.*)$/){
+                my $start = $1;
+                my $end_regex = $2;
+                my $sCmd = $3;
+
+                if ($start > 0 and $start <= $lines_len){ # If $start is legal
+                    my $end = &find_end_by_digit($start,$end_regex);
+                    if ($end>0 and $end<=$lines_len and $end >= $start){ # $end exists
+                        for (my $i=$start;$i<$end+1;$i++){
+                            &insert_to_sub_lines($i,$sCmd);
+                        }
+                    }
+                    else{ # If $end doesn't exist, substitute since $start
+                        for (my $i=$start;$i<$lines_len+1;$i++){
+                            &insert_to_sub_lines($i,$sCmd);
+                        }
+                    }
+                }
+                elsif ($start == 0){
+                    my $end = find_end_without_start_digit($end_regex);
+                    if ($end == -1){ # If no lines matched, print everything
+                        $end = $lines_len;
+                    }
+                    for (my $i=1; $i<$end+1;$i++){
+                        &insert_to_sub_lines($i,$sCmd);
+                    }
+                }
+                elsif ($start > $lines_len){ # If $start is too big, print nothing
+                    next;
+                }
+            }
+            # 07 Substitute a range: REGEX - DIGIT
+            elsif ($cmd =~ /^\/(.*?)\/,(\d+)(s.*)$/){
+                my $start_regex = $1;
+                my $end = $2;
+                my $sCmd = $3;
+
+                if ($end>0 and $end<=$lines_len){ # If $end is legal
+                    my $start = find_start_by_digit($start_regex,$end);
+                    if ($start>0 and $start<=$end){ # If $start exists
+                        for (my $i = $start; $i<$end+1;$i++){
+                            &insert_to_sub_lines($i,$sCmd);
+                        }
+                    }
+                    else{ # If $start does not exist, substitute nothing
+                        next;
+                    }
+                }
+                elsif ($end == 0){ # Substitute all lines matched the $start_regex
+                    for (my $i=0; $i<$lines_len;$i++){
+                        my $line = $lines[$i];
+                        if ($line =~ /$start_regex/){
+                            &insert_to_sub_lines($i+1,$sCmd);
+                        }
+                    }
+                }
+                elsif ($end > $lines_len){ # Substitute all lines since the first match of $start_regex
+                    my $start = find_start_without_end_digit($start_regex);
+                    for (my $i=$start;$i<$lines_len+1;$i++){
+                        &insert_to_sub_lines($i+1,$sCmd);
+                    }
+                }
+            }
+            # 08 Substitute a range: REGEX -REGEX
+            elsif ($cmd =~ /^\/(.*?)\/,\/(.*?)\/(s.*)$/){
+                my $start_regex = $1;
+                my $end_regex = $2;
+                my $sCmd = $3;
+                my $sub_flag = 0;
+
+                for (my $i=0;$i<$lines_len;$i++){
+                    my $line = $lines[$i];
+                    if ($line =~ /$start_regex/ and $sub_flag == 0){
+                        $sub_flag = 1;
+                    }
+                    elsif ($line =~ /$end_regex/ and $sub_flag == 1){
+                        &insert_to_sub_lines($i+1,$scmd);
+                        $sub_flag = 0;
+                    }
+
+                    if ($sub_flag == 1){
+                        &insert_to_sub_lines($i+1,$scmd);
+                    }
+                }
+            }
+            else{
+                print("speed: command line: invalid command\n");
+                exit 1;
+            }
         }
     }
-
 }
 
-
-sub update_quit_line {
-    my (@commands) = @_;
-    foreach $item (@commands){
-       my $cmd = $item->[0];
-       my $type = $item->[1];
-       if ($type eq 'q'){
-           my $cmdQuitLine = get_cmd_q_line ($cmd);
-           if ($cmdQuitLine == -1){
-               next;
-           }
-           if ($quit_line_num > $cmdQuitLine and $quit_line_num >0){
-               $quit_line_num = $cmdQuitLine;
-           }
-           elsif ($quit_line_num == -1){
-               $quit_line_num = $cmdQuitLine;
-           }
-       } 
+sub check_quit_line {
+    my ($line,@commands) = @_;
+    foreach my $item (@commands){
+        my $cmd = $item->[0];
+        my $type = $item->[1];
+        if ($type eq 'q'){
+            if ($cmd =~ /^(\d+)q$/){
+                my $num = $1;
+                if ($LINE_NUM == $num){
+                    return 1;
+                }
+            }
+            elsif ($cmd =~ /^\/(.*)\/q$/) {
+                my $pattern = $1;
+                if ($line =~ /$pattern/){
+                    return 1;
+                }
+            }
+            else {
+                print("speed: command line: invalid command\n");
+                exit 1;
+            }
+            return 0;
+        }
     }
 }
-
 
 ############ SUB ROUTINES ENDS ################
 
@@ -668,20 +1023,23 @@ our $EXIT_STATUS = 0;
 our $DELETE_STATUS = 0;
 
 our %del_lines;
+our %print_lines;
+our %sub_lines;
 our $quit_line_num = -1;
 
 our $sed_commands = chomp_semicolon($argvs[0]);
 our @inter_commands = get_commands($sed_commands); 
 
 my @commands = commands_with_type(@inter_commands);
-&update_quit_line(@commands);
 
 our $LINE_NUM = 1;
 our @lines; 
 
 while (my $line = <STDIN>){
+    my $flag = &check_quit_line($line,@commands);
     push(@lines,$line);
-    if ($LINE_NUM == $quit_line_num){
+    if ($flag == 1){
+        $quit_line_num = $LINE_NUM;
         last;
     }
     $LINE_NUM += 1;
@@ -690,7 +1048,9 @@ while (my $line = <STDIN>){
 $LINE_NUM = 1;
 our $lines_len = @lines;
 
-&update_del_lines(@commands);
+&update_hash_lines(@commands);
+
+
 
 # Update the del_lines hash 
 # TODO: update_del_lines(@commands);
@@ -700,6 +1060,9 @@ foreach my $line (@lines) {
     $DELETE_STATUS = 0;
     foreach $item (@commands){
         $line = &exec_cmd($item,$line);
+        if ($item->[1] eq 'q' and $LINE_NUM == $quit_line_num){
+            last;
+        }
     }
 
     if ($n_flag == 0 && $DELETE_STATUS == 0){

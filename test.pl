@@ -1,7 +1,20 @@
 #!/usr/bin/perl -w
 
-my $str = "3,/blah\/klah\/dlah/d";
+my %h1 = ('b'=>1,'c'=>1);
 
-$str =~ /^(\d+),\/(.*)\/d$/;
+my %hash;
+$hash{'a'} = \%h1;
 
-print("$2\n");
+foreach $k (keys %hash){
+    my %val = %{$hash{$k}};
+    $val{'d'} = 1;
+    foreach $k1 (keys %val){
+        print("$k1\n");
+    }
+}
+
+print("$hash{'a'}{'c'}\n");
+
+if (exists($hash{'a'}{'c'})){
+    print("hello\n");
+}

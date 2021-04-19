@@ -1,5 +1,5 @@
 #!/bin/bash 
 
 git add . 
-git commit -m "Before making s and p have range functionality"
+git commit -m "m1"
 git push

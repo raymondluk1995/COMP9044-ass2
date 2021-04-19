@@ -543,7 +543,6 @@ sub update_hash_lines {
             elsif ($cmd =~ /^(\d+),\/(.*)\/d$/){
                 my $start = $1;
                 my $end_regex = $2;
-                # $end_regex = slash_meta($end_regex);
 
                 if ($start > 0 and $start <= $lines_len){ # If $start is legal
                     my $end = &find_end_by_digit($start,$end_regex);
@@ -582,6 +581,15 @@ sub update_hash_lines {
                     if ($start>0 and $start<=$end){ # If $start exists
                         for (my $i = $start; $i<$end+1;$i++){
                             $del_lines{$i} = 1;
+                        }
+                        # After the range, keep deleting the line matched the $start_regex
+                        if ($end+1 <= $lines_len){
+                            for (my $i=$end; $i<$lines_len;$i+=1){
+                                my $line = $lines[$i];
+                                if ($line =~ /$start_regex/){
+                                    $del_lines{$i+1} = 1;
+                                }
+                            }
                         }
                     }
                     else{ # If $start does not exist, delete nothing

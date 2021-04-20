@@ -29,6 +29,11 @@ seq 1 2 > two.txt
 seq 1 5 > five.txt
 speed.pl -f commands.speed two.txt five.txt
 echo "-------------------------test 05"
-
+seq 24 43 | speed.pl ' 3, 17  d  # comment'
+echo "-------------------------test 06"
+seq 24 43 | speed.pl ' 3, 17  d  # comment'
+echo "-------------------------test 07"
+seq 24 43 | speed.pl '/2/d # delete  ;  4  q # quit'
+echo "-------------------------test 08"
 cd ..
 rm -r temp

@@ -141,6 +141,7 @@ sub rm_comment {
     my @chars = split(//,$cmd);
     my @new_chars;
 
+
     for (my $i =0; $i < $cmd_len;$i=$i+1){
         my $ch = $chars[$i];
         if ($ch ne '#'){
@@ -161,7 +162,7 @@ sub commands_with_type {
     my @new_cmds;
     foreach my $cmd (@cmds){
         $cmd = rm_space($cmd);
-        $cmd = rm_comment($cmd);
+        # $cmd = rm_comment($cmd);
         my $type = get_command_type($cmd);
         my @item = ($cmd,$type);
         push(@new_cmds,\@item);
@@ -1050,7 +1051,7 @@ our $quit_line_num = -1;
 
 # When the input is coming from STDIN
 if ($f_flag == 0 and @argvs==1){
-    our $sed_commands = chomp_semicolon($argvs[0]);
+    our $sed_commands = chomp_semicolon(rm_comment($argvs[0]));
     our @inter_commands = get_commands($sed_commands); 
     our @commands = commands_with_type(@inter_commands);
     our $LINE_NUM = 1;
@@ -1068,7 +1069,7 @@ if ($f_flag == 0 and @argvs==1){
     }
 }
 elsif($f_flag==0 and @argvs>1){
-    our $sed_commands = chomp_semicolon($argvs[0]);
+    our $sed_commands = chomp_semicolon(rm_comment($argvs[0]));
     our @inter_commands = get_commands($sed_commands); 
     our @commands = commands_with_type(@inter_commands);
     our $LINE_NUM = 1;
@@ -1110,6 +1111,7 @@ elsif ($f_flag == 1 and @argvs == 1) {
     my $cmd_line = "";
     foreach my $item (@f_lines){
         chomp $item;
+        $item = rm_comment($item);
         $cmd_line = $cmd_line . $item . ";";
     }
     chop($cmd_line);
@@ -1120,9 +1122,7 @@ elsif ($f_flag == 1 and @argvs == 1) {
     our @lines; 
 
     while (my $line = <STDIN>){
-        # print("line num now is $LINE_NUM\n");
         my $flag = &check_quit_line($line,@commands);
-        # print("The flag now is $flag\n");
         push(@lines,$line);
         if ($flag == 1){
             $quit_line_num = $LINE_NUM;
@@ -1140,6 +1140,7 @@ elsif ($f_flag == 1 and @argvs > 1){
     my $cmd_line = "";
     foreach my $item (@f_lines){
         chomp $item;
+        $item = rm_comment($item);
         $cmd_line = $cmd_line . $item . ";";
     }
     chop($cmd_line);

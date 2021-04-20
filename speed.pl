@@ -251,7 +251,6 @@ sub exec_cmd {
             exit 1;
         }
     }
-    # TODO: D_COMMAND, P_COMMAND ETC.
     return ($line);
 }
 
@@ -271,6 +270,14 @@ sub p_command {
     }
 }
 
+# print command execution version 2: append a line to @new_lines
+sub p_command_ver2 {
+    my ($cmd,$line) = @_;
+    if (exists($print_lines{$LINE_NUM})){
+        push(@new_lines,$line);
+    }
+}
+
 # delete command execution
 sub d_command {
     my ($cmd,$line) = @_;
@@ -278,6 +285,93 @@ sub d_command {
         $DELETE_STATUS = 1;
     }
 }
+
+# Execute a command, and instead printing, append the printing line to the @new_lines
+sub exec_cmd_ver2 {
+    my ($item,$line) = @_;
+    my $cmd = $item -> [0];
+    my $type = $item -> [1];
+    chomp $cmd;
+
+    if ($type eq "q"){
+        &q_command($cmd,$line);
+    }
+    elsif ($type eq "p"){
+        &p_command_ver2($cmd,$line);
+    }
+    elsif ($type eq "d"){
+        &d_command($cmd,$line);
+    }
+    elsif ($type eq "s"){
+        if (!exists($sub_lines{$LINE_NUM})){ # No need to substitute
+            return ($line);
+        } 
+
+        # 01 If all lines need to be substitued
+        if ($cmd =~ /^s/){
+            $line = &s_command($cmd,$line);
+        }
+        # 02 Subsitute a single line - digit
+        elsif ($cmd =~ /^(\d+)(s.*)$/){
+            my $targetLine = $1;
+            my $sCmd = $2;
+            if ($LINE_NUM == $targetLine){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 03 Substitute lines matched the regex
+        elsif ($cmd =~ /^\/(.*?)\/(s.*)$/){
+            my $targetRegex = $1;
+            my $sCmd = $2;
+            if ($line =~ /$targetRegex/){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 04 Substitute the last line
+        elsif ($cmd =~ /^\$(s.*)$/){
+            my $sCmd = $1;
+            if ($LINE_NUM == $lines_len){
+               $line = &s_command($sCmd,$line); 
+            }
+        }
+        # 05 Substitute a range: DIGIT - DIGIT
+        elsif ($cmd =~ /^(\d+),(\d+)(s.*)$/){
+            my $sCmd = $3;
+            if (exists($sub_lines{$LINE_NUM}{$sCmd})){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 06 Substitute a range: DIGTI - REGEX
+        elsif ($cmd =~ /(\d+),\/(.*?)\/(s.*)$/){
+            my $sCmd = $3;
+            if (exists($sub_lines{$LINE_NUM}{$sCmd})){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 07 Substitute a range: REGEX - DIGIT
+        elsif ($cmd =~ /^\/(.*?)\/,(\d+)(s.*)$/){
+            my $sCmd = $3;
+            if (exists($sub_lines{$LINE_NUM}{$sCmd})){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        # 08 Substitute a range: REGEX -REGEX
+        elsif ($cmd =~ /^\/(.*?)\/,\/(.*?)\/(s.*)$/){
+            my $sCmd = $3;
+            if (exists($sub_lines{$LINE_NUM}{$sCmd})){
+                $line = &s_command($sCmd,$line);
+            }
+        }
+        else{
+            print("speed: command line: invalid command\n");
+            exit 1;
+        }
+    }
+    return ($line);
+}
+
+
+
 
 # Given the $start_regex and $end number, find the $start number
 # The $start number should be the first matched line number which is from [1,$end].
@@ -1039,6 +1133,10 @@ our $f_flag = 0;
 our $n_flag = 0;
 our @argvs = check_flags(@ARGV);
 
+if (@argvs == 0){
+    print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+    exit 1;
+}
 
 our $EXIT_STATUS = 0;
 our $DELETE_STATUS = 0;
@@ -1048,157 +1146,290 @@ our %print_lines;
 our %sub_lines;
 our $quit_line_num = -1;
 
+if ($i_flag == 0){
+    # When the input is coming from STDIN
+    if ($f_flag == 0 and @argvs==1){
+        our $sed_commands = chomp_semicolon(rm_comment($argvs[0]));
+        our @inter_commands = get_commands($sed_commands); 
+        our @commands = commands_with_type(@inter_commands);
+        our $LINE_NUM = 1;
+        our @lines; 
 
-# When the input is coming from STDIN
-if ($f_flag == 0 and @argvs==1){
-    our $sed_commands = chomp_semicolon(rm_comment($argvs[0]));
-    our @inter_commands = get_commands($sed_commands); 
-    our @commands = commands_with_type(@inter_commands);
-    our $LINE_NUM = 1;
-    our @lines; 
-
-    while (my $line = <STDIN>){
-        my $flag = &check_quit_line($line,@commands);
-        # print("The flag now is $flag\n");
-        push(@lines,$line);
-        if ($flag == 1){
-            $quit_line_num = $LINE_NUM;
-            last;
+        while (my $line = <STDIN>){
+            my $flag = &check_quit_line($line,@commands);
+            # print("The flag now is $flag\n");
+            push(@lines,$line);
+            if ($flag == 1){
+                $quit_line_num = $LINE_NUM;
+                last;
+            }
+            $LINE_NUM += 1;
         }
-        $LINE_NUM += 1;
     }
-}
-elsif($f_flag==0 and @argvs>1){
-    our $sed_commands = chomp_semicolon(rm_comment($argvs[0]));
-    our @inter_commands = get_commands($sed_commands); 
-    our @commands = commands_with_type(@inter_commands);
-    our $LINE_NUM = 1;
-    our @lines; 
+    elsif($f_flag==0 and @argvs>1){
+        our $sed_commands = chomp_semicolon(rm_comment($argvs[0]));
+        our @inter_commands = get_commands($sed_commands); 
+        our @commands = commands_with_type(@inter_commands);
+        our $LINE_NUM = 1;
+        our @lines; 
 
-    for (my $i=1; $i<@argvs;$i++){
-        my $input_file = $argvs[$i];
-        unless (-r $input_file){
-            print("speed: error\n");
-            exit 1;
+        for (my $i=1; $i<@argvs;$i++){
+            my $input_file = $argvs[$i];
+            unless (-r $input_file){
+                print("speed: error\n");
+                exit 1;
+            }
+
+            open ($FH,'<', $input_file);
+            my @input_lines = <$FH>;
+            close ($FH);
+
+            push(@lines,@input_lines);
         }
 
-        open ($FH,'<', $input_file);
-        my @input_lines = <$FH>;
+        foreach my $line (@lines){
+            my $flag = &check_quit_line($line,@commands);
+            if ($flag == 1){
+                $quit_line_num = $LINE_NUM;
+                last;
+            }
+            $LINE_NUM += 1;
+        }
+    }
+    # Getting input from STDIN now
+    elsif ($f_flag == 1 and @argvs == 1) {
+        open($FH,'<',$argvs[0]);
+        my @f_lines = <$FH>;
         close ($FH);
 
-        push(@lines,@input_lines);
-    }
-
-    foreach my $line (@lines){
-        my $flag = &check_quit_line($line,@commands);
-        if ($flag == 1){
-            $quit_line_num = $LINE_NUM;
-            last;
+        my $cmd_line = "";
+        foreach my $item (@f_lines){
+            chomp $item;
+            $item = rm_comment($item);
+            $cmd_line = $cmd_line . $item . ";";
         }
-        $LINE_NUM += 1;
-    }
-}
-elsif ($f_flag==1 and @argvs ==0){ 
-    print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
-    exit 1;
-}
-# Getting input from STDIN now
-elsif ($f_flag == 1 and @argvs == 1) {
-    open($FH,'<',$argvs[0]);
-    my @f_lines = <$FH>;
-    close ($FH);
+        chop($cmd_line);
+        our $sed_commands = chomp_semicolon($cmd_line);
+        our @inter_commands = get_commands($sed_commands); 
+        our @commands = commands_with_type(@inter_commands);
+        our $LINE_NUM = 1;
+        our @lines; 
 
-    my $cmd_line = "";
-    foreach my $item (@f_lines){
-        chomp $item;
-        $item = rm_comment($item);
-        $cmd_line = $cmd_line . $item . ";";
-    }
-    chop($cmd_line);
-    our $sed_commands = chomp_semicolon($cmd_line);
-    our @inter_commands = get_commands($sed_commands); 
-    our @commands = commands_with_type(@inter_commands);
-    our $LINE_NUM = 1;
-    our @lines; 
-
-    while (my $line = <STDIN>){
-        my $flag = &check_quit_line($line,@commands);
-        push(@lines,$line);
-        if ($flag == 1){
-            $quit_line_num = $LINE_NUM;
-            last;
+        while (my $line = <STDIN>){
+            my $flag = &check_quit_line($line,@commands);
+            push(@lines,$line);
+            if ($flag == 1){
+                $quit_line_num = $LINE_NUM;
+                last;
+            }
+            $LINE_NUM += 1;
         }
-        $LINE_NUM += 1;
     }
-}
-# Getting input from files
-elsif ($f_flag == 1 and @argvs > 1){
-    open($FH,'<',$argvs[0]);
-    my @f_lines = <$FH>;
-    close ($FH);
-
-    my $cmd_line = "";
-    foreach my $item (@f_lines){
-        chomp $item;
-        $item = rm_comment($item);
-        $cmd_line = $cmd_line . $item . ";";
-    }
-    chop($cmd_line);
-    our $sed_commands = chomp_semicolon($cmd_line);
-    our @inter_commands = get_commands($sed_commands); 
-    our @commands = commands_with_type(@inter_commands);
-    our $LINE_NUM = 1;
-    our @lines; 
-
-    for (my $i=1; $i<@argvs;$i++){
-        my $input_file = $argvs[$i];
-        unless (-r $input_file){
-            print("speed: error\n");
-            exit 1;
-        }
-
-        open ($FH,'<', $input_file);
-        my @input_lines = <$FH>;
+    # Getting input from files
+    elsif ($f_flag == 1 and @argvs > 1){
+        open($FH,'<',$argvs[0]);
+        my @f_lines = <$FH>;
         close ($FH);
 
-        push(@lines,@input_lines);
+        my $cmd_line = "";
+        foreach my $item (@f_lines){
+            chomp $item;
+            $item = rm_comment($item);
+            $cmd_line = $cmd_line . $item . ";";
+        }
+        chop($cmd_line);
+        our $sed_commands = chomp_semicolon($cmd_line);
+        our @inter_commands = get_commands($sed_commands); 
+        our @commands = commands_with_type(@inter_commands);
+        our $LINE_NUM = 1;
+        our @lines; 
+
+        for (my $i=1; $i<@argvs;$i++){
+            my $input_file = $argvs[$i];
+            unless (-r $input_file){
+                print("speed: error\n");
+                exit 1;
+            }
+
+            open ($FH,'<', $input_file);
+            my @input_lines = <$FH>;
+            close ($FH);
+
+            push(@lines,@input_lines);
+        }
+
+        foreach my $line (@lines){
+            my $flag = &check_quit_line($line,@commands);
+            if ($flag == 1){
+                $quit_line_num = $LINE_NUM;
+                last;
+            }
+            $LINE_NUM += 1;
+        }
+
     }
 
-    foreach my $line (@lines){
-        my $flag = &check_quit_line($line,@commands);
-        if ($flag == 1){
-            $quit_line_num = $LINE_NUM;
-            last;
+    $LINE_NUM = 1;
+    our $lines_len = @lines;
+    &update_hash_lines(@commands);
+
+    # Update the del_lines hash 
+    # TODO: update_del_lines(@commands);
+    foreach my $line (@lines) {
+        chomp $line;
+        $EXIT_STATUS = 0;
+        $DELETE_STATUS = 0;
+        foreach my $item (@commands){
+            $line = &exec_cmd($item,$line);
+            if ($item->[1] eq 'q' and $LINE_NUM == $quit_line_num){
+                last;
+            }
         }
-        $LINE_NUM += 1;
+
+        if ($n_flag == 0 && $DELETE_STATUS == 0){
+            print("$line\n");
+        }
+
+        if ($EXIT_STATUS == 1){
+            exit 0;
+        }
+
+        $LINE_NUM +=1;
+    }
+
+}
+else{
+    # -i does not work when input comes from <STDIN>
+    if ($f_flag == 0 and @argvs==1){
+        print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+        exit 1;
+    }
+    # when addresses come from command line
+    elsif ($f_flag==0 and @argvs>1){
+        our $sed_commands = chomp_semicolon(rm_comment($argvs[0]));
+        our @inter_commands = get_commands($sed_commands); 
+        our @commands = commands_with_type(@inter_commands);
+        our $LINE_NUM = 1;
+        our @all_lines; 
+
+        for (my $i=1; $i<@argvs;$i++){
+            my $input_file = $argvs[$i];
+            unless (-r $input_file){
+                print("speed: error\n");
+                exit 1;
+            }
+
+            open ($FH,'<', $input_file);
+            my @input_lines = <$FH>;
+            close ($FH);
+
+            push(@all_lines,\@input_lines);
+        }
+
+        for (my $i=0; $i<@all_lines;$i++){
+            my $file_lines = $all_lines[$i];
+            our @lines = @{$file_lines};
+            $LINE_NUM = 1;
+            our $EXIT_STATUS = 0;
+            our $DELETE_STATUS = 0;
+            our %del_lines;
+            our %print_lines;
+            our %sub_lines;
+            our $quit_line_num = -1;
+
+            foreach my $line (@lines){
+                my $flag = &check_quit_line($line,@commands);
+                if ($flag == 1){
+                    $quit_line_num = $LINE_NUM;
+                    last;
+                }
+                $LINE_NUM += 1;
+            }
+
+            $LINE_NUM = 1;
+            our $lines_len = @lines;
+            &update_hash_lines(@commands);
+
+            our @new_lines;
+
+            foreach my $line (@lines){
+                chomp $line;
+                $EXIT_STATUS = 0;
+                $DELETE_STATUS = 0;
+                foreach my $item (@commands){
+                    $line = &exec_cmd_ver2($item,$line);
+                    if ($item->[1] eq 'q' and $LINE_NUM == $quit_line_num){
+                        last;
+                    }
+                }
+                if ($n_flag == 0 && $DELETE_STATUS == 0){
+                    push(@new_lines,$line);
+                }
+
+                if ($EXIT_STATUS == 1){
+                    exit 0;
+                }
+                $LINE_NUM +=1;
+            }
+
+            $filename = @argvs[$i+1];
+            unlink $filename;
+            open($OUTPUT,'>',$filename);
+            foreach my $line (@new_lines){
+                $line = $line . "\n";
+                print $OUTPUT $line;
+            }
+            close ($OUTPUT);
+        }
+    }
+    # two flags cannot have only one argument
+    elsif ($f_flag == 1 and @argvs == 1){
+        print("usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n");
+        exit 1;
+    }
+    # Getting input from files
+    elsif ($f_flag == 1 and @argvs > 1){
+        open($FH,'<',$argvs[0]);
+        my @f_lines = <$FH>;
+        close ($FH);
+
+        my $cmd_line = "";
+        foreach my $item (@f_lines){
+            chomp $item;
+            $item = rm_comment($item);
+            $cmd_line = $cmd_line . $item . ";";
+        }
+        chop($cmd_line);
+        our $sed_commands = chomp_semicolon($cmd_line);
+        our @inter_commands = get_commands($sed_commands); 
+        our @commands = commands_with_type(@inter_commands);
+        our $LINE_NUM = 1;
+        our @lines; 
+
+        for (my $i=1; $i<@argvs;$i++){
+            my $input_file = $argvs[$i];
+            unless (-r $input_file){
+                print("speed: error\n");
+                exit 1;
+            }
+
+            open ($FH,'<', $input_file);
+            my @input_lines = <$FH>;
+            close ($FH);
+
+            push(@lines,@input_lines);
+        }
+
+        foreach my $line (@lines){
+            my $flag = &check_quit_line($line,@commands);
+            if ($flag == 1){
+                $quit_line_num = $LINE_NUM;
+                last;
+            }
+            $LINE_NUM += 1;
+        }
+
     }
 
 }
 
-$LINE_NUM = 1;
-our $lines_len = @lines;
-&update_hash_lines(@commands);
-
-# Update the del_lines hash 
-# TODO: update_del_lines(@commands);
-foreach my $line (@lines) {
-    chomp $line;
-    $EXIT_STATUS = 0;
-    $DELETE_STATUS = 0;
-    foreach $item (@commands){
-        $line = &exec_cmd($item,$line);
-        if ($item->[1] eq 'q' and $LINE_NUM == $quit_line_num){
-            last;
-        }
-    }
-
-    if ($n_flag == 0 && $DELETE_STATUS == 0){
-        print("$line\n");
-    }
-
-    if ($EXIT_STATUS == 1){
-        exit 0;
-    }
-
-    $LINE_NUM +=1;
-}

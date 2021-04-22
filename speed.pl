@@ -306,13 +306,13 @@ sub p_command {
     # 02 Print a single line - regex
     elsif ($cmd =~ /^\/([^,]*)\/p$/){
         my $pattern = $1;
-        if ($line =~ /$pattern/){
+        if ($line =~ /$pattern/ and $DELETE_STATUS == 0){
             my_print($line,$OH);
         }
     }
     # 03 Print the last line
     elsif ($cmd =~ /^\$p$/){
-        if ($LAST_LINE_FLAG == 1){
+        if ($LAST_LINE_FLAG == 1 and $DELETE_STATUS == 0){
             my_print($line,$OH);
         }
     }
@@ -333,10 +333,10 @@ sub p_command {
             print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
-        elsif ($start<=$LINE_NUM and $LINE_NUM<=$end){
+        elsif ($start<=$LINE_NUM and $LINE_NUM<=$end and $DELETE_STATUS == 0){
             my_print($line,$OH);
         }
-        elsif ($start > $end and $start==$LINE_NUM){
+        elsif ($start > $end and $start==$LINE_NUM and $DELETE_STATUS == 0){
             my_print($line,$OH);
         }
     }
@@ -345,13 +345,17 @@ sub p_command {
         my $start = $1;
         my $end_regex = $2;
 
-        if (($start == $LINE_NUM or $start == 0) and $RANGE_P==0){
+        if ($start == 0){
+            $start = 1;
+        }
+
+        if ($start == $LINE_NUM and $RANGE_P==0){
             $RANGE_P = 1;
-            my_print($line,$OH);
+            my_print($line,$OH) if $DELETE_STATUS == 0;
             return ($line);
         }
         if ($RANGE_P==1){
-            my_print($line,$OH);
+            my_print($line,$OH) if $DELETE_STATUS == 0;
         }
         if ($line =~ /$end_regex/){
             $RANGE_P = 0;
@@ -372,7 +376,7 @@ sub p_command {
         }
 
         if ($RANGE_P==1 or $RANGE_RD_P==1){
-            my_print($line,$OH);
+            my_print($line,$OH) if $DELETE_STATUS == 0;
         }
         if ($LINE_NUM == $end){
             $RANGE_P = 0;
@@ -385,11 +389,11 @@ sub p_command {
 
         if ($line =~ /$start_regex/ and $RANGE_P==0 ){
             $RANGE_P = 1;
-            my_print($line,$OH);
+            my_print($line,$OH) if $DELETE_STATUS == 0;
             return ($line);
         }
         if ($RANGE_P==1){
-            my_print($line,$OH);
+            my_print($line,$OH) if $DELETE_STATUS == 0;
         }
         if ($line =~ /$end_regex/){
             $RANGE_P = 0;
@@ -430,6 +434,7 @@ sub d_command {
     }
     # 03 Delete the last line
     elsif ($cmd =~ /^\$d$/){
+        
         if ($LAST_LINE_FLAG == 1){
             $DELETE_STATUS = 1;
         }
@@ -447,7 +452,7 @@ sub d_command {
             print STDERR "speed: command line: invalid command\n";
             exit 1; 
         }
-        elsif ($start==0 and $end==0){
+        elsif ($start==0){
             print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
@@ -464,7 +469,11 @@ sub d_command {
         my $start = $1;
         my $end_regex = $2;
 
-        if (($start == $LINE_NUM or $start == 0) and $RANGE_D==0){
+        if ($start == 0){
+            $start = 1;
+        }
+
+        if ($start == $LINE_NUM and $RANGE_D==0){
             $RANGE_D = 1;
             $DELETE_STATUS = 1;
             return ($line);
@@ -496,7 +505,7 @@ sub d_command {
             $RANGE_D = 0;
         } 
     }
-    # 07 Print a range: REGEX - REGEX
+    # 07 Delete a range: REGEX - REGEX
     elsif ($cmd =~ /^\/(.*)\/,\/(.*)\/d$/){
         my $start_regex = $1;
         my $end_regex = $2;
@@ -666,7 +675,11 @@ sub s_command {
         my $start = $1;
         my $end_regex = $2;
 
-        if (($start == $LINE_NUM or $start == 0) and $RANGE_S==0){
+        if ($start == 0){
+            $start = 1;
+        }
+
+        if ($start == $LINE_NUM and $RANGE_S==0){
             $RANGE_S = 1;
             $line = s_real_command($sCmd,$line);
             return ($line);
@@ -758,15 +771,15 @@ if ($i_flag == 0){
         $RANGE_S = 0;
 
         while (my $line = <STDIN>){
-            chomp $line;
-            $RANGE_RD_D = 0;
-            if (eof){
-                $LAST_LINE_FLAG = 1;
-            }
-
             $EXIT_STATUS = 0;
             $DELETE_STATUS = 0;
             $LAST_LINE_FLAG = 0;
+            chomp $line;
+            $RANGE_RD_D = 0;
+
+            if (eof){
+                $LAST_LINE_FLAG = 1;
+            }
             
             foreach my $item (@commands){
                 $RANGE_RD_P = 0;

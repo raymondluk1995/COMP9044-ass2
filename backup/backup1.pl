@@ -342,16 +342,16 @@ sub p_command {
             $start = 1;
         }
 
-        if ($start == $LINE_NUM and $RANGES[$index]{'RANGE_P'}==0){
-            $RANGES[$index]{'RANGE_P'} = 1;
+        if ($start == $LINE_NUM and $RANGE_P==0){
+            $RANGE_P = 1;
             my_print($line,$OH) if $DELETE_STATUS == 0;
             return ($line);
         }
-        if ($line =~ /$end_regex/ and $RANGES[$index]{'RANGE_P'}==1){
+        if ($line =~ /$end_regex/ and $RANGE_P==1){
             my_print($line,$OH) if $DELETE_STATUS == 0;
-            $RANGES[$index]{'RANGE_P'} = 0;
+            $RANGE_P = 0;
         }
-        if ($RANGES[$index]{'RANGE_P'}==1){
+        if ($RANGE_P==1){
             my_print($line,$OH) if $DELETE_STATUS == 0;
         }     
     }
@@ -360,20 +360,20 @@ sub p_command {
         my $start_regex = $1;
         my $end = $2;
 
-        if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_P'}==0 and $LINE_NUM<=$end){
-            $RANGES[$index]{'RANGE_P'} = 1;
+        if ($line =~ /$start_regex/ and $RANGE_P==0 and $LINE_NUM<=$end){
+            $RANGE_P = 1;
         }
 
         # Only print the line matched the $start_regex when $LINE_NUM is greater than $end
-        if ($line=~/$start_regex/ and $RANGES[$index]{'RANGE_P'}==0 and $LINE_NUM>$end){
-            $RANGES[$index]{'RANGE_RD_P'} = 1;
+        if ($line=~/$start_regex/ and $RANGE_P==0 and $LINE_NUM>$end){
+            $RANGE_RD_P = 1;
         }
 
-        if ($RANGES[$index]{'RANGE_P'}==1 or $RANGES[$index]{'RANGE_RD_P'}==1){
+        if ($RANGE_P==1 or $RANGE_RD_P==1){
             my_print($line,$OH) if $DELETE_STATUS == 0;
         }
         if ($LINE_NUM == $end){
-            $RANGES[$index]{'RANGE_P'} = 0;
+            $RANGE_P = 0;
         } 
     }
     # 06 Print a range: REGEX - REGEX
@@ -381,16 +381,16 @@ sub p_command {
         my $start_regex = $1;
         my $end_regex = $2;
 
-        if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_P'}==0 ){
-            $RANGES[$index]{'RANGE_P'} = 1;
+        if ($line =~ /$start_regex/ and $RANGE_P==0 ){
+            $RANGE_P = 1;
             my_print($line,$OH) if $DELETE_STATUS == 0;
             return ($line);
         }
-        if ($line =~ /$end_regex/ and $RANGES[$index]{'RANGE_P'}==1){
+        if ($line =~ /$end_regex/ and $RANGE_P==1){
             my_print($line,$OH) if $DELETE_STATUS == 0;
-            $RANGES[$index]{'RANGE_P'} = 0;
+            $RANGE_P = 0;
         } 
-        if ($RANGES[$index]{'RANGE_P'}==1){
+        if ($RANGE_P==1){
             my_print($line,$OH) if $DELETE_STATUS == 0;
         }
     } 
@@ -468,18 +468,18 @@ sub d_command {
             $start = 1;
         }
 
-        if ($start == $LINE_NUM and $RANGES[$index]{'RANGE_D'}==0){
-            $RANGES[$index]{'RANGE_D'} = 1;
+        if ($start == $LINE_NUM and $RANGE_D==0){
+            $RANGE_D = 1;
             $DELETE_STATUS = 1;
             return ($line);
         }
         
-        if ($line =~ /$end_regex/ and $RANGES[$index]{'RANGE_D'} == 1){
+        if ($line =~ /$end_regex/ and $RANGE_D == 1){
             $DELETE_STATUS = 1;
-            $RANGES[$index]{'RANGE_D'} = 0;
+            $RANGE_D = 0;
         } 
 
-        if ($RANGES[$index]{'RANGE_D'}==1){
+        if ($RANGE_D==1){
             $DELETE_STATUS = 1;
         }    
     }
@@ -488,19 +488,19 @@ sub d_command {
         my $start_regex = $1;
         my $end = $2;
 
-        if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_D'}==0 and $LINE_NUM<=$end){
-            $RANGES[$index]{'RANGE_D'} = 1;
+        if ($line =~ /$start_regex/ and $RANGE_D==0 and $LINE_NUM<=$end){
+            $RANGE_D = 1;
         }
 
         # Only print the line matched the $start_regex when $LINE_NUM is greater than $end
-        if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_D'}==0 and $LINE_NUM>$end){
-            $RANGES[$index]{'RANGE_RD_D'} = 1;
+        if ($line =~ /$start_regex/ and $RANGE_D==0 and $LINE_NUM>$end){
+            $RANGE_RD_D = 1;
         }
-        if ($RANGES[$index]{'RANGE_D'}==1 or $RANGES[$index]{'RANGE_RD_D'}==1){
+        if ($RANGE_D==1 or $RANGE_RD_D==1){
             $DELETE_STATUS = 1;
         }
         if ($LINE_NUM == $end){
-            $RANGES[$index]{'RANGE_D'} = 0;
+            $RANGE_D = 0;
         } 
     }
     # 06 Delete a range: REGEX - REGEX
@@ -508,18 +508,18 @@ sub d_command {
         my $start_regex = $1;
         my $end_regex = $2;
 
-        if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_D'}==0 ){
-            $RANGES[$index]{'RANGE_D'} = 1;
+        if ($line =~ /$start_regex/ and $RANGE_D==0 ){
+            $RANGE_D = 1;
             $DELETE_STATUS =1;
             return ($line);
         }
 
-        if ($line =~ /$end_regex/ and $RANGES[$index]{'RANGE_D'}==1){
+        if ($line =~ /$end_regex/ and $RANGE_D==1){
             $DELETE_STATUS = 1;
-            $RANGES[$index]{'RANGE_D'} = 0;
+            $RANGE_D = 0;
         }
 
-        if ($RANGES[$index]{'RANGE_D'}==1){
+        if ($RANGE_D==1){
             $DELETE_STATUS = 1;
         } 
     } 
@@ -679,18 +679,18 @@ sub s_command {
             $start = 1;
         }
 
-        if ($start == $LINE_NUM and $RANGES[$index]{'RANGE_S'}==0){
-            $RANGES[$index]{'RANGE_S'} = 1;
+        if ($start == $LINE_NUM and $RANGE_S==0){
+            $RANGE_S = 1;
             $line = s_real_command($sCmd,$line);
             return ($line);
         }
 
-        if ($line =~ /$end_regex/ and $RANGES[$index]{'RANGE_S'}==1){
+        if ($line =~ /$end_regex/ and $RANGE_S==1){
             $line = s_real_command($sCmd,$line);
-            $RANGES[$index]{'RANGE_S'} = 0;
+            $RANGE_S = 0;
         }
 
-        if ($RANGES[$index]{'RANGE_S'}==1){
+        if ($RANGE_S==1){
             $line = s_real_command($sCmd,$line);
         }
         return ($line);
@@ -701,19 +701,19 @@ sub s_command {
         my $end = $2;
         my $sCmd = $3;
 
-        if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_S'}==0 and $LINE_NUM<=$end){
-            $RANGES[$index]{'RANGE_S'} = 1;
+        if ($line =~ /$start_regex/ and $RANGE_S==0 and $LINE_NUM<=$end){
+            $RANGE_S = 1;
         }
 
         # Only print the line matched the $start_regex when $LINE_NUM is greater than $end
-        if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_S'}==0 and $LINE_NUM>$end){
-            $RANGES[$index]{'RANGE_RD_S'} = 1;
+        if ($line =~ /$start_regex/ and $RANGE_S==0 and $LINE_NUM>$end){
+            $RANGE_RD_S = 1;
         }
-        if ($RANGES[$index]{'RANGE_S'}==1 or $RANGES[$index]{'RANGE_RD_S'}==1){
+        if ($RANGE_S==1 or $RANGE_RD_S==1){
             $line = s_real_command($sCmd,$line); 
         }
         if ($LINE_NUM == $end){
-            $RANGES[$index]{'RANGE_S'} = 0;
+            $RANGE_S = 0;
         } 
     }
     # 07 Substitute a range: REGEX - REGEX 
@@ -722,18 +722,18 @@ sub s_command {
         my $end_regex = $2;
         my $sCmd = $3;
 
-        if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_S'}==0 ){
-            $RANGES[$index]{'RANGE_S'} = 1;
+        if ($line =~ /$start_regex/ and $RANGE_S==0 ){
+            $RANGE_S = 1;
             $line = s_real_command($sCmd,$line);
             return ($line);
         }
 
-        if ($line =~ /$end_regex/ and $RANGES[$index]{'RANGE_S'}==1){
+        if ($line =~ /$end_regex/ and $RANGE_S==1){
             $line = s_real_command($sCmd,$line);
-            $RANGES[$index]{'RANGE_S'} = 0;
+            $RANGE_S = 0;
         }
 
-        if ($RANGES[$index]{'RANGE_S'}==1){
+        if ($RANGE_S==1){
             $line = s_real_command($sCmd,$line);
         } 
     } 
@@ -754,46 +754,30 @@ sub s_command {
 
 }
 
-sub initialize_ranges {
-    my($cmd_len) = @_;
-    for (my $i=0; $i<$cmd_len;$i++){
-        my %hash = ('RANGE_P'=>0,
-                    'RANGE_RD_P'=>0,
-                    'RANGE_D'=>0,
-                    'RANGE_RD_D'=>0,
-                    'RANGE_S'=>0,
-                    'RANGE_RD_S'=>0);
-        push(@RANGES,\%hash);
-    }
-}
-
 sub stdin_process {
     my ($cmd) = @_;
     our $sed_commands = chomp_semicolon($cmd);
     our @inter_commands = get_commands($sed_commands); 
     our @commands = commands_with_type(@inter_commands);
     $LINE_NUM = 1;
-    my $commands_len = @commands;
-    initialize_ranges($commands_len);
+    $RANGE_P = 0;
+    $RANGE_D = 0;
+    $RANGE_S = 0;
 
     while (my $line = <STDIN>){
         $EXIT_STATUS = 0;
         $DELETE_STATUS = 0;
         $LAST_LINE_FLAG = 0;
         chomp $line;
-
-        foreach my $range (@RANGES){
-            $range{'RANGE_RD_D'} = 0;
-        }
+        $RANGE_RD_D = 0;
 
         if (eof){
             $LAST_LINE_FLAG = 1;
         }
         
-        for ($index=0;$index<$commands_len;$index++){
-            my $item = $commands[$index];
-            $RANGES[$index]{'RANGE_RD_P'} = 0;
-            $RANGES[$index]{'RANGE_RD_S'} = 0;
+        foreach my $item (@commands){
+            $RANGE_RD_P = 0;
+            $RANGE_RD_S = 0;
             $line = exec_cmd($item,$line,"STDOUT");
             if ($EXIT_STATUS==1){
                 last;
@@ -818,8 +802,10 @@ sub file_stdout_process {
     our @inter_commands = get_commands($sed_commands); 
     our @commands = commands_with_type(@inter_commands);
     $LINE_NUM = 1;
-    my $commands_len = @commands;
-    initialize_ranges($commands_len);
+    $RANGE_P = 0;
+    $RANGE_D = 0;
+    $RANGE_S = 0;
+    $LINE_NUM = 1;
 
     for (my $i=1;$i<@argvs;$i++){
         my $input_file = $argvs[$i];
@@ -834,19 +820,15 @@ sub file_stdout_process {
             $DELETE_STATUS = 0;
             $LAST_LINE_FLAG = 0;
             chomp $line;
-
-            foreach my $range (@RANGES){
-                $range{'RANGE_RD_D'} = 0;
-            }
+            $RANGE_RD_D = 0;
 
             if (eof and $i==(@argvs-1)){
                 $LAST_LINE_FLAG = 1;
             }
 
-            for ($index=0;$index<$commands_len;$index++){
-                my $item = $commands[$index];
-                $RANGES[$index]{'RANGE_RD_P'} = 0;
-                $RANGES[$index]{'RANGE_RD_S'} = 0;
+            foreach my $item (@commands){
+                $RANGE_RD_P = 0;
+                $RANGE_RD_S = 0;
                 $line = exec_cmd($item,$line,"STDOUT");
                 if ($EXIT_STATUS==1){
                     last;
@@ -873,7 +855,6 @@ our $f_flag = 0;
 our $n_flag = 0;
 our @argvs = check_flags(@ARGV);
 our $LINE_NUM = 1;
-our $index = 0; # index of commands array
 
 if (@argvs == 0){
     print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
@@ -883,7 +864,12 @@ if (@argvs == 0){
 our $EXIT_STATUS = 0;
 our $DELETE_STATUS = 0;
 our $LAST_LINE_FLAG = 0;
-our @RANGES;
+our $RANGE_P = 0;
+our $RANGE_RD_P = 0; # A flag for REGEX-DIGIT case in print range 
+our $RANGE_D = 0;
+our $RANGE_RD_D = 0; # A flag for REGEX-DIGIT case in print range 
+our $RANGE_S = 0;
+our $RANGE_RD_S = 0;
 
 if ($i_flag == 0){
     # When the input is coming from STDIN

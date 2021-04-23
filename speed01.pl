@@ -162,7 +162,6 @@ sub commands_with_type {
     my @new_cmds;
     foreach my $cmd (@cmds){
         $cmd = rm_space($cmd);
-        # $cmd = rm_comment($cmd);
         my $type = get_command_type($cmd);
         my @item = ($cmd,$type);
         push(@new_cmds,\@item);

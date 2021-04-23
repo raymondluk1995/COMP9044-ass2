@@ -102,12 +102,12 @@ sub get_commands {
         }
         elsif ($ch eq ';' and $s_re_flag==0 and $re_flag==0){
             my $str = substr($addr,$anchor,$i-$anchor);
-            push(@commands,$str);
+            push(@commands,$str) if $str ne "";
             $anchor = $i +1;
         }
     }
     my $str = substr($addr,$anchor,$addr_len-$anchor); # Get the last command
-    push(@commands,$str);
+    push(@commands,$str) if $str ne "";
     return @commands;
 }
 
@@ -924,10 +924,10 @@ if ($i_flag == 0){
         open($FH,'<',$argvs[0]);
         while (my $line = <$FH>){
             chomp $line;
+            $line = rm_comment($line);
             $cmd_line = $cmd_line . $line . ";";
         }
         close ($FH);
-
         file_stdout_process($cmd_line);
     }
 

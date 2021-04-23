@@ -7,8 +7,11 @@ export PATH=$PATH:$(pwd)
 mkdir temp 
 cd temp 
 
-echo '$q' > commandsFile
-seq 1 5 | speed.pl -f commandsFile
-# seq 1 5 | speed.pl '$q'
+echo '/2/    d # comment' > commandsFile
+echo '# comment'         >> commandsFile
+echo '4    q'            >> commandsFile
+seq 1 2   > two.txt
+seq 1 5   > five.txt
+speed.pl -f commandsFile two.txt five.txt
 cd .. 
 rm -rf temp 

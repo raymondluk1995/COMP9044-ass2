@@ -224,7 +224,6 @@ sub commands_with_type {
     my (@cmds) = @_;
     my @new_cmds;
     foreach my $cmd (@cmds){
-        print("cmd is $cmd\n");
         if ($cmd !~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*a/
             and $cmd !~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*i/){
             $cmd = rm_space($cmd);

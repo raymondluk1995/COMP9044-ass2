@@ -6,7 +6,7 @@ sub check_flags {
     my @new_argvs;
     foreach $item (@argvs){
         if ($item =~ /^\-\-/){
-            die "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
             exit 1;
         }
 
@@ -21,7 +21,7 @@ sub check_flags {
                 $n_flag = 1;
             }
             else{
-                die "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+                print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
                 exit 1;
             }
         }
@@ -128,7 +128,7 @@ sub get_command_type {
         return ("s");
     }
     else{
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
 }
@@ -256,7 +256,7 @@ sub exec_cmd {
         $line = s_command($cmd,$line);
     }
     else{
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
     
@@ -283,7 +283,7 @@ sub q_command {
         }
     }
     else {
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
     return ($line);
@@ -296,11 +296,11 @@ sub p_command {
     if ($cmd =~ /^(\d+)p$/){ 
         my $num = $1;
         if ($num == 0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
         elsif ($num < 0){
-            die "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
             exit 1;
         }
 
@@ -320,15 +320,15 @@ sub p_command {
         my $end = $2;
         
         if ($start<0){
-            die "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
             exit 1;
         }
         elsif ($end<0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1; 
         } 
         elsif ($start==0 and $end==0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
         elsif ($start<=$LINE_NUM and $LINE_NUM<=$end and $DELETE_STATUS == 0){
@@ -411,7 +411,7 @@ sub p_command {
         }
     }
     else{
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
     return ($line);
@@ -424,7 +424,7 @@ sub d_command {
     if ($cmd =~ /^(\d+)d$/){ 
         my $num = $1;
         if ($num == 0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
 
@@ -444,15 +444,15 @@ sub d_command {
         my $end = $2;
         
         if ($start<0){
-            die "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
             exit 1;
         }
         elsif ($end < 0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1; 
         }
         elsif ($start==0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
         elsif ($start<=$LINE_NUM and $LINE_NUM<=$end){
@@ -539,7 +539,7 @@ sub d_command {
         }
     }
     else{
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
     return ($line);
@@ -579,7 +579,7 @@ sub s_real_command {
     my $cmd_len = length($cmd);
     # Then length should be greater than 3
     if ($cmd_len < 4){
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
 
@@ -589,13 +589,13 @@ sub s_real_command {
 
     # If the ending of command is not 'g' or the delimiter, the s command is invalid
     if ($cmdChars[-1] ne 'g' && $cmdChars[-1] ne $dm){
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
 
     # If the ending of command is 'g' but the penultimate character is not delimiter 
     if ($cmdChars[-1] eq 'g' && $cmdChars[-2] ne $dm){
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     } 
 
@@ -611,7 +611,7 @@ sub s_real_command {
         $line =~ s/$pat1/$pat2/;
     }
     else{
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
     return ($line);
@@ -630,11 +630,11 @@ sub s_command {
         my $sCmd = $2;
 
         if ($num == 0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1; 
         }
         elsif ($num < 0){
-            die "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
             exit 1;
         }
         elsif ($LINE_NUM == $num){
@@ -655,15 +655,15 @@ sub s_command {
         my $sCmd = $3;
 
         if ($start < 0){
-            die "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
             exit 1;
         }
         elsif ($end < 0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1; 
         }
         elsif ($start==0 and $end==0){
-            die "speed: command line: invalid command\n";
+            print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
         elsif ($start<=$LINE_NUM and $LINE_NUM<=$end){
@@ -751,7 +751,7 @@ sub s_command {
         }
     } 
     else{
-        die "speed: command line: invalid command\n";
+        print STDERR "speed: command line: invalid command\n";
         exit 1;
     }
     return ($line);
@@ -816,6 +816,64 @@ sub stdin_process {
     }
 }
 
+sub file_process {
+    my ($cmd_line) = @_;
+    our $sed_commands = chomp_semicolon($cmd_line);
+    our @inter_commands = get_commands($sed_commands); 
+    our @commands = commands_with_type(@inter_commands);
+    $LINE_NUM = 1;
+    my $commands_len = @commands;
+    initialize_ranges($commands_len);
+
+    for (my $i=0;$i<@argvs;$i++){
+        my $input_file = $argvs[$i];
+        unless (-r $input_file){
+            print STDERR "speed: error\n";
+            exit 1;
+        }
+        open($FH,'<',$input_file);
+        open($OH,'>',"temp.txt");
+        while (my $line = <$FH>){
+            $EXIT_STATUS = 0;
+            $DELETE_STATUS = 0;
+            $LAST_LINE_FLAG = 0;
+            chomp $line;
+
+            foreach my $range (@RANGES){
+                $range{'RANGE_RD_D'} = 0;
+            }
+
+            if (eof and $i==(@argvs-1)){
+                $LAST_LINE_FLAG = 1;
+            }
+
+            for ($index=0;$index<$commands_len;$index++){
+                my $item = $commands[$index];
+                $RANGES[$index]{'RANGE_RD_P'} = 0;
+                $RANGES[$index]{'RANGE_RD_S'} = 0;
+                $line = exec_cmd($item,$line,$OH);
+                if ($EXIT_STATUS==1){
+                    last;
+                }
+            }
+
+            if ($n_flag==0 and $DELETE_STATUS==0){
+                my_print($line,$OH);
+            }
+
+            if ($EXIT_STATUS==1 and $DELETE_STATUS==0){
+                exit 0;
+            }
+
+            $LINE_NUM += 1;
+        }
+        close($FH);
+        close($OH);
+        unlink $input_file;
+        rename("temp.txt",$input_file) || die ("Rename fails!\n");
+    }
+}
+
 sub file_stdout_process {
     my ($cmd) = @_;
     our $sed_commands = chomp_semicolon($cmd);
@@ -828,7 +886,7 @@ sub file_stdout_process {
     for (my $i=1;$i<@argvs;$i++){
         my $input_file = $argvs[$i];
         unless (-r $input_file){
-            die "speed: error\n";
+            print STDERR "speed: error\n";
             exit 1;
         }
 
@@ -880,7 +938,7 @@ our $LINE_NUM = 1;
 our $index = 0; # index of commands array
 
 if (@argvs == 0){
-    die "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+    print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
     exit 1;
 }
 
@@ -901,7 +959,7 @@ if ($i_flag == 0){
     # Getting input from STDIN now
     elsif ($f_flag == 1 and @argvs == 1) {
         unless (-r $argvs[0]){
-            die "speed: error\n";
+            print STDERR "speed: error\n";
             exit 1;
         }
         my $cmd_line = "";
@@ -917,7 +975,7 @@ if ($i_flag == 0){
     # Getting input from files now
     elsif ($f_flag == 1 and @argvs>1) {
         unless (-r $argvs[0]){
-            die "speed: error\n";
+            print STDERR "speed: error\n";
             exit 1;
         }
         my $cmd_line = "";
@@ -931,6 +989,32 @@ if ($i_flag == 0){
         file_stdout_process($cmd_line);
     }
 
+}
+# i-flag is 1
+else{
+    if (@argvs==1){
+        print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+        exit 1;
+    }
+    elsif ($f_flag==0 and @argvs>1){
+        my $cmd_line = shift(@argvs);
+        file_process($cmd_line);
+    }
+    elsif ($f_flag==1 and @argvs>1){
+        my $cmd_file = shift(@argvs);
+        unless (-r $cmd_file){
+            print STDERR "speed: error\n";
+            exit 1;
+        }
+        my $cmd_line = "";
+        open($FH,'<',$argvs[0]);
+        while (my $line = <$FH>){
+            chomp $line;
+            $cmd_line = $cmd_line . $line . ";";
+        }
+        close ($FH);
+        file_process($cmd_line);
+    }
 }
 
 

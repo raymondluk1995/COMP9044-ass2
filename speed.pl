@@ -1031,7 +1031,7 @@ else{
             exit 1;
         }
         my $cmd_line = "";
-        open($FH,'<',$argvs[0]);
+        open($FH,'<',$cmd_file);
         while (my $line = <$FH>){
             chomp $line;
             $cmd_line = $cmd_line . $line . ";";

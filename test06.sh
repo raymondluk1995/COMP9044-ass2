@@ -7,10 +7,7 @@ export PATH=$PATH:$(pwd)
 mkdir temp 
 cd temp 
 
-seq 1 5 > five.txt
-echo '/[24]/d' > commandsFile
-speed.pl -i -f commandsFile five.txt
-cat five.txt
+seq 1 5 | speed.pl '3a hello'
 
 cd .. 
 rm -rf temp 

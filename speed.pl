@@ -114,7 +114,6 @@ sub get_commands {
 # Return the command type
 sub get_command_type {
     my ($cmd) = @_;
-
     if ($cmd =~ /d$/){
         return ("d");
     }
@@ -225,8 +224,9 @@ sub commands_with_type {
     my (@cmds) = @_;
     my @new_cmds;
     foreach my $cmd (@cmds){
-        if (! $cmd =~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*a/
-            and ! $cmd =~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*i/){
+        print("cmd is $cmd\n");
+        if ($cmd !~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*a/
+            and $cmd !~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*i/){
             $cmd = rm_space($cmd);
         }    
         $cmd = rm_comment($cmd);

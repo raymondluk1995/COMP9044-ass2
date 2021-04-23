@@ -7,7 +7,7 @@ export PATH=$PATH:$(pwd)
 mkdir temp 
 cd temp 
 
-seq 1 5 | speed.pl 's/[15]/z\/z\/z/'
+seq 1 5 | speed.pl 's1[\15]1zzz1'
 
 cd .. 
 rm -rf temp 

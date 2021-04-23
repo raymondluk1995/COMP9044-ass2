@@ -272,7 +272,7 @@ sub q_command {
         }
     }
     elsif ($cmd =~ /^\/(.*)\/q$/) {
-        my $pattern = $1;
+        my $pattern = process_back_slash($1);
         if ($line =~ /$pattern/){
             $EXIT_STATUS = 1;
         }
@@ -341,7 +341,7 @@ sub p_command {
     # 04 Print a range: DIGIT- REGEX
     elsif ($cmd =~ /^(\d+),\/(.*)\/p$/){
         my $start = $1;
-        my $end_regex = $2;
+        my $end_regex = process_back_slash($2);
 
         if ($start == 0){
             $start = 1;
@@ -362,7 +362,7 @@ sub p_command {
     }
     # 05 Print a range: REGEX - DIGIT
     elsif ($cmd =~ /^\/(.*)\/,(\d+)p$/){
-        my $start_regex = $1;
+        my $start_regex = process_back_slash($1);
         my $end = $2;
 
         if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_P'}==0 and $LINE_NUM<=$end){
@@ -383,8 +383,8 @@ sub p_command {
     }
     # 06 Print a range: REGEX - REGEX
     elsif ($cmd =~ /^\/(.*)\/,\/(.*)\/p$/){
-        my $start_regex = $1;
-        my $end_regex = $2;
+        my $start_regex = process_back_slash($1);
+        my $end_regex = process_back_slash($2);
 
         if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_P'}==0 ){
             $RANGES[$index]{'RANGE_P'} = 1;
@@ -404,8 +404,8 @@ sub p_command {
         my_print($line,$OH) if $DELETE_STATUS == 0;
     } 
     # 08 Print a single line - regex
-    elsif ($cmd =~ /^\/([^,]*)\/p$/){
-        my $pattern = $1;
+    elsif ($cmd =~ /^\/(.*)\/p$/){
+        my $pattern = process_back_slash($1);
         if ($line =~ /$pattern/ and $DELETE_STATUS == 0){
             my_print($line,$OH) if $DELETE_STATUS == 0;
         }
@@ -466,7 +466,7 @@ sub d_command {
     # 04 Delete a range: DIGIT- REGEX
     elsif ($cmd =~ /^(\d+),\/(.*)\/d$/){
         my $start = $1;
-        my $end_regex = $2;
+        my $end_regex = process_back_slash($2);
 
         if ($start == 0){
             $start = 1;
@@ -489,7 +489,7 @@ sub d_command {
     }
     # 05 Delete a range: REGEX - DIGIT
     elsif ($cmd =~ /^\/(.*)\/,(\d+)d$/){
-        my $start_regex = $1;
+        my $start_regex = process_back_slash($1);
         my $end = $2;
 
         if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_D'}==0 and $LINE_NUM<=$end){
@@ -509,8 +509,8 @@ sub d_command {
     }
     # 06 Delete a range: REGEX - REGEX
     elsif ($cmd =~ /^\/(.*)\/,\/(.*)\/d$/){
-        my $start_regex = $1;
-        my $end_regex = $2;
+        my $start_regex = process_back_slash($1);
+        my $end_regex = process_back_slash($2);
 
         if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_D'}==0 ){
             $RANGES[$index]{'RANGE_D'} = 1;
@@ -573,6 +573,30 @@ sub get_s_command_patterns {
     return (@result);
 }
 
+sub process_back_slash {
+    my ($pattern) = @_;
+    my @pat_chars = split(//,$pattern);
+
+    my $result = "";
+    my $i = 0;
+    while($i<@pat_chars){
+        my $ch = $pat_chars[$i];
+        if ($ch ne '\\'){
+            $result = $result . $ch;
+            $i+=1;
+        }
+        else{
+            if ($i==@argvs-1){
+                print STDERR "speed: command line: invalid command\n";
+                exit 1;  
+            }
+            $result .= $pat_chars[$i+1];
+            $i+=2;
+        }
+    }
+    return ($result);
+}
+
 # Execute the s real command
 sub s_real_command {
     my ($cmd, $line) = @_;
@@ -600,8 +624,8 @@ sub s_real_command {
     } 
 
     my @patterns = get_s_command_patterns($cmd,$dm);
-    my $pat1 = $patterns[0];
-    my $pat2 = $patterns[1];
+    my $pat1 = process_back_slash($patterns[0]);
+    my $pat2 = process_back_slash($patterns[1]);
 
 
     if ($cmdChars[-1] eq 'g'){
@@ -676,7 +700,7 @@ sub s_command {
     # 05 Substitute a range: DIGIT- REGEX
     elsif ($cmd =~ /^(\d+),\/(.*)\/(s.*)$/){
         my $start = $1;
-        my $end_regex = $2;
+        my $end_regex = process_back_slash($2);
         my $sCmd = $3;
 
         if ($start == 0){
@@ -701,7 +725,7 @@ sub s_command {
     }
     # 06 Substitute a range: REGEX - DIGIT
     elsif ($cmd =~ /^\/(.*)\/,(\d+)(s.*)$/){
-        my $start_regex = $1;
+        my $start_regex = process_back_slash($1);
         my $end = $2;
         my $sCmd = $3;
 
@@ -722,8 +746,8 @@ sub s_command {
     }
     # 07 Substitute a range: REGEX - REGEX 
     elsif ($cmd =~ /^\/(.*)\/,\/(.*)\/(s.*)$/){
-        my $start_regex = $1;
-        my $end_regex = $2;
+        my $start_regex = process_back_slash($1);
+        my $end_regex = process_back_slash($2);
         my $sCmd = $3;
 
         if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_S'}==0 ){
@@ -743,7 +767,7 @@ sub s_command {
     } 
     # 08 Substitute lines matched the regex
     elsif ($cmd =~ /^\/(.*?)\/(s.*)$/){
-        my $regex = $1;
+        my $regex = process_back_slash($1);
         my $sCmd = $2;
 
         if ($line =~ /$regex/){

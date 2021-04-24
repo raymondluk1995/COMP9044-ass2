@@ -1,24 +1,14 @@
 #!/usr/bin/perl -w
 
+my @matches;
+my $string = "ddabdadabeew";
+my $pat = "EE\${1}EE";
 
-$string = "3, 17  d  # comment";
+# $pat = quotemeta($pat);
 
-if ($string !~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*a/){
-    if ($string !~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*i/){
-        print("here1\n");
-    }
-    else{
-        print("here2\n");
-    }
-}
-else{
-    print("here3\n");
-}
+$pat = qr /$pat/;
 
-if ($string =~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*a/){
-    print("here4\n");
-}
 
-if ($string =~ /^\s*((\d+)|(\/.*?\/))\s*(,(\d+)|(\/.*?\/))?\s*i/){
-    print("here5\n");
-}
+$string =~ s/(da)b/$pat/g;
+# $string =~ s/(da)b/EE${1}EE/g;
+print("$string\n");

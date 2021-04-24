@@ -999,7 +999,6 @@ sub get_s_command_patterns {
 sub process_back_slash {
     my ($pattern) = @_;
     my @pat_chars = split(//,$pattern);
-
     my $result = "";
     my $i = 0;
     while($i<@pat_chars){
@@ -1009,12 +1008,23 @@ sub process_back_slash {
             $i+=1;
         }
         else{
-            if ($i==@argvs-1){
+            if ($i==@pat_chars-1){
                 print STDERR "speed: command line: invalid command\n";
                 exit 1;  
             }
-            $result .= $pat_chars[$i+1];
-            $i+=2;
+            if ($pat_chars[$i+1] =~ /^[0-9]/){
+                $result .= "\$";
+                $i+=1;
+                while ($i < @pat_chars -1 and $pat_chars[$i+1] =~ /^[0-9]/){
+                    print("A number is added\n");
+                    $result .= $pat_chars[$i+1];
+                    $i+=1;
+                }
+            }
+            else{
+                $result .= $pat_chars[$i+1];
+                $i+=2;
+            }
         }
     }
     return ($result);

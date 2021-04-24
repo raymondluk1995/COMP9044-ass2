@@ -797,7 +797,7 @@ sub i_command {
             $line =  $new_content . "\n" . $line;
         } 
     }
-    # 07 Append a range: REGEX - REGEX 
+    # 07 Change a range: REGEX - REGEX 
     elsif ($cmd =~ /^\s*\/(.*?)\/\s*,\s*\/(.*?)\/\s*i\s*(.*)$/){
         my $start_regex = process_back_slash($1);
         my $end_regex = process_back_slash($2);
@@ -818,7 +818,7 @@ sub i_command {
             $line =  $new_content . "\n" . $line;
         } 
     } 
-    # 08 Append lines matched the regex
+    # 08 Change lines matched the regex
     elsif ($cmd =~ /^\s*\/(.*?)\/\s*i\s*(.*)$/){
         my $regex = process_back_slash($1);
         my $new_content = $2;
@@ -837,11 +837,11 @@ sub i_command {
 # Change command 
 sub c_command {
     my ($cmd,$line) = @_;
-    # 01 If all lines need to be inserted
+    # 01 If all lines need to be changed
     if ($cmd =~ /^\s*c\s*(.*)$/){
         $line = $1;
     }
-    # 02 Insert after a single line 
+    # 02 Change after a single line 
     elsif ($cmd =~ /^\s*(\d+)\s*c\s*(.*)$/){
         if ($1 == 0){
             print STDERR "speed: command line: invalid command\n";
@@ -855,13 +855,13 @@ sub c_command {
             $line = $2;
         }
     }
-    # 03 Insert after the last line
+    # 03 Change after the last line
     elsif ($cmd =~ /^\s*\$\s*c\s*(.*)$/){
         if ($LAST_LINE_FLAG == 1){
             $line = $1;
         }
     }
-    # 04 Insert between a range: DIGIT - DIGIT
+    # 04 Change between a range: DIGIT - DIGIT
     elsif ($cmd =~ /^\s*(\d+)\s*,\s*(\d+)\s*c\s*(.*)$/){
         my $start = $1;
         my $end = $2;
@@ -886,7 +886,7 @@ sub c_command {
             $line = $new_content;
         }
     }
-    # 05 Insert between a range: DIGIT - REGEX
+    # 05 Change between a range: DIGIT - REGEX
     elsif ($cmd =~ /^\s*(\d+)\s*,\s*\/(.*?)\/\s*i\s*(.*)$/){
         my $start = $1;
         my $end_regex = process_back_slash($2);
@@ -911,7 +911,7 @@ sub c_command {
             $line =  $new_content;
         }
     }
-    # 06 Insert a range: REGEX - DIGIT
+    # 06 Change a range: REGEX - DIGIT
     elsif ($cmd =~ /^\s*\/(.*?)\/\s*,\s*(\d+)\s*c\s*(.*)$/){
         my $start_regex = process_back_slash($1);
         my $end = $2;
@@ -931,7 +931,7 @@ sub c_command {
             $line =  $new_content;
         } 
     }
-    # 07 Append a range: REGEX - REGEX 
+    # 07 Change a range: REGEX - REGEX 
     elsif ($cmd =~ /^\s*\/(.*?)\/\s*,\s*\/(.*?)\/\s*c\s*(.*)$/){
         my $start_regex = process_back_slash($1);
         my $end_regex = process_back_slash($2);
@@ -952,7 +952,7 @@ sub c_command {
             $line =  $new_content;
         } 
     } 
-    # 08 Append lines matched the regex
+    # 08 Change lines matched the regex
     elsif ($cmd =~ /^\s*\/(.*?)\/\s*c\s*(.*)$/){
         my $regex = process_back_slash($1);
         my $new_content = $2;
@@ -1238,6 +1238,7 @@ sub stdin_process {
         $DELETE_STATUS = 0;
         $LAST_LINE_FLAG = 0;
         chomp $line;
+        my $range_c_flag = 0;
 
         foreach my $range (@RANGES){
             $range{'RANGE_RD_D'} = 0;
@@ -1255,12 +1256,15 @@ sub stdin_process {
             $RANGES[$index]{'RANGE_RD_I'} = 0;
             $RANGES[$index]{'RANGE_RD_C'} = 0;
             $line = exec_cmd($item,$line,"STDOUT");
+            if ($RANGES[$index]{'RANGE_C'}==1){
+                $range_c_flag = 1;
+            }
             if ($EXIT_STATUS==1){
                 last;
             }
         }
 
-        if ($n_flag==0 and $DELETE_STATUS==0){
+        if ($n_flag==0 and $DELETE_STATUS==0 and $range_c_flag==0){
             my_print($line,"STDOUT");
         }
 
@@ -1294,6 +1298,7 @@ sub file_process {
             $DELETE_STATUS = 0;
             $LAST_LINE_FLAG = 0;
             chomp $line;
+            my $range_c_flag = 0;
 
             foreach my $range (@RANGES){
                 $range{'RANGE_RD_D'} = 0;
@@ -1311,12 +1316,15 @@ sub file_process {
                 $RANGES[$index]{'RANGE_RD_I'} = 0;
                 $RANGES[$index]{'RANGE_RD_C'} = 0;
                 $line = exec_cmd($item,$line,$OH);
+                if ($RANGES[$index]{'RANGE_C'}==1){
+                    $range_c_flag = 1;
+                }
                 if ($EXIT_STATUS==1){
                     last;
                 }
             }
 
-            if ($n_flag==0 and $DELETE_STATUS==0){
+            if ($n_flag==0 and $DELETE_STATUS==0 and $range_c_flag==0){
                 my_print($line,$OH);
             }
 
@@ -1355,7 +1363,7 @@ sub file_stdout_process {
             $DELETE_STATUS = 0;
             $LAST_LINE_FLAG = 0;
             chomp $line;
-
+            my $range_c_flag = 0;
             foreach my $range (@RANGES){
                 $range{'RANGE_RD_D'} = 0;
             }
@@ -1372,12 +1380,15 @@ sub file_stdout_process {
                 $RANGES[$index]{'RANGE_RD_I'} = 0;
                 $RANGES[$index]{'RANGE_RD_C'} = 0;
                 $line = exec_cmd($item,$line,"STDOUT");
+                if ($RANGES[$index]{'RANGE_C'}==1){
+                    $range_c_flag = 1;
+                }
                 if ($EXIT_STATUS==1){
                     last;
                 }
             }
 
-            if ($n_flag==0 and $DELETE_STATUS==0){
+            if ($n_flag==0 and $DELETE_STATUS==0 and $range_c_flag==0){
                 my_print($line,"STDOUT");
             }
 

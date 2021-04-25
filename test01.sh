@@ -13,10 +13,10 @@ cmpOutput(){
 
 export PATH=$PATH:$(pwd)
 
-temp_folder=$(mktemp -d testgirt.XXXXXXXXXX)
+temp_folder=$(mktemp -d testspeed.XXXXXXXXXX)
 trap "cd ..; rm -rf '$temp_folder'; exit" INT TERM EXIT
 cd "$temp_folder" || exit 1
-touch >> output1 2>&1 
+touch output1
 touch output2
 
 

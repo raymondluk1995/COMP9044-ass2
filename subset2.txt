@@ -1,0 +1,203 @@
+speed.pl syntax OK
+
+Test test83_subset2_-i (seq 1 5 > five.txt; speed.pl -i /[24]/d five.txt; cat five.txt) - failed (Incorrect output)
+Your program produced these 5 lines of output:
+1
+2
+3
+4
+5
+
+The correct 3 lines of output for this test were:
+1
+3
+5
+
+The difference between your output(-) and the correct output(+) is:
+  1
+- 2
+  3
+- 4
+  5
+You can reproduce this test by executing these commands:
+  seq 1 5 > five.txt
+  speed.pl -i /[24]/d five.txt
+  cat five.txt
+Test test84_subset2_-i (seq 1 5 > five.txt; echo '/[24]/d' > commandsFile; speed.pl -i -f commandsFile five.txt; cat five.txt) - failed (Incorrect output)
+Your program produced these 5 lines of output:
+1
+2
+3
+4
+5
+
+The correct 3 lines of output for this test were:
+1
+3
+5
+
+The difference between your output(-) and the correct output(+) is:
+  1
+- 2
+  3
+- 4
+  5
+You can reproduce this test by executing these commands:
+  seq 1 5 > five.txt
+  echo '/[24]/d' > commandsFile
+  speed.pl -i -f commandsFile five.txt
+  cat five.txt
+Test test85_subset2_multiple_commands (echo 'Punctuation characters include . , ; :'|speed.pl 's/;/semicolon/g;/;/q') - passed
+Test test86_subset2_substitute (seq 1 5 | speed.pl 's/[15]/z\/z\/z/') - failed (Incorrect output)
+Your program produced these 5 lines of output:
+z\\/z\\/z
+2
+3
+4
+z\\/z\\/z
+
+The correct 5 lines of output for this test were:
+z/z/z
+2
+3
+4
+z/z/z
+Your program's output would be correct if you removed all '\' characters.
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl 's/[15]/z\/z\/z/'
+Test test87_subset2_substitute (seq 1 5 | speed.pl 's_[15]_z\_z\_z_') - failed (Incorrect output)
+Your program produced these 5 lines of output:
+z\\_z\\_z
+2
+3
+4
+z\\_z\\_z
+
+The correct 5 lines of output for this test were:
+z_z_z
+2
+3
+4
+z_z_z
+Your program's output would be correct if you removed all '\' characters.
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl 's_[15]_z\_z\_z_'
+Test test88_subset2_substitute (seq 1 5 | speed.pl 's1[\15]1zzz1') - failed (Incorrect output)
+Your program produced these 5 lines of output:
+1
+2
+3
+4
+5
+
+The correct 5 lines of output for this test were:
+zzz
+2
+3
+4
+zzz
+
+The difference between your output(-) and the correct output(+) is:
+- 1
++ zzz
+  2
+  4
+- 5
++ zzz
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl 's1[\15]1zzz1'
+Test test89_subset2_append (seq 1 5 | speed.pl '3a hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl '3a hello'
+Test test90_subset2_append (seq 1 5 | speed.pl '$a hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl '$a hello'
+Test test91_subset2_append (seq 1 5 | speed.pl 'a hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl 'a hello'
+Test test92_subset2_append (head dictionary.txt | speed.pl '/s$/a hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  head dictionary.txt | speed.pl '/s$/a hello'
+Test test93_subset2_append (head dictionary.txt | speed.pl '/.{3}/a hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  head dictionary.txt | speed.pl '/.{3}/a hello'
+Test test94_subset2_append (seq 1 5 | speed.pl '3i hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl '3i hello'
+Test test95_subset2_append (seq 1 5 | speed.pl '$i hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl '$i hello'
+Test test96_subset2_append (seq 1 5 | speed.pl 'i hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  seq 1 5 | speed.pl 'i hello'
+Test test97_subset2_append (head dictionary.txt | speed.pl '/s$/i hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  head dictionary.txt | speed.pl '/s$/i hello'
+Test test98_subset2_append (head dictionary.txt | speed.pl '/.{3}/i hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  head dictionary.txt | speed.pl '/.{3}/i hello'
+Test test99_subset2_change (head dictionary.txt | speed.pl '/.{3}/c hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  head dictionary.txt | speed.pl '/.{3}/c hello'
+Test test100_subset2_change (head dictionary.txt | speed.pl '/.{3}/,/.{5}/c hello') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  head dictionary.txt | speed.pl '/.{3}/,/.{5}/c hello'
+Test test101_subset2_branch (echo 1000001 | speed.pl ': start; s/00/0/; t start') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  echo 1000001 | speed.pl ': start
+  s/00/0/
+  t start'
+Test test102_subset2_branch (echo 0123456789 | speed.pl -n 'p; : begin;s/[^ ](.)/ \1/; t skip; q; : skip; p; b begin') - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  echo 0123456789 | speed.pl -n 'p
+  : begin
+  s/[^ ](.)/ \1/
+  t skip
+  q
+  : skip
+  p
+  b begin'
+Test test103_subset2_branch (echo -e '101011\n0110'| speed.pl -f binary2words.speed) - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  echo -e '101011\n0110'| speed.pl -f binary2words.speed
+Test test104_subset2_branch (head dictionary.txt | speed.pl -f rev.speed) - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  head dictionary.txt | speed.pl -f rev.speed
+Test test105_subset2_branch (seq 250 260 | speed.pl -f decimal2binary.speed) - failed (errors)
+Your program produced these errors:
+speed: command line: invalid command
+You can reproduce this test by executing these commands:
+  seq 250 260 | speed.pl -f decimal2binary.speed
+1 tests passed 22 tests failed

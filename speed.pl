@@ -1,5 +1,8 @@
 #!/usr/bin/perl -w 
 
+# Student Name: Raymond Lu
+# Student Number: z5277884
+
 ############ SUB ROUTINES START ###############
 sub check_flags {
     my (@argvs) = @_;
@@ -19,6 +22,10 @@ sub check_flags {
             }
             elsif ($item eq "-n"){
                 $n_flag = 1;
+            }
+            elsif ($item =~ /^\-\d+/){
+                print STDERR "speed: command line: invalid command\n";
+                 exit 1; 
             }
             else{
                 print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
@@ -114,7 +121,11 @@ sub get_commands {
 # Return the command type
 sub get_command_type {
     my ($cmd) = @_;
-    if ($cmd =~ /d$/){
+    
+    if ($cmd =~ /^\s*(((\d+)|(\/.*?\/)|\$)\s*(,\s*((\d+)|(\/.*?\/)))?\s*)?([aic])(.*)$/){
+        return ($9);
+    }
+    elsif ($cmd =~ /d$/){
         return ("d");
     }
     elsif ($cmd =~ /q$/){
@@ -125,15 +136,6 @@ sub get_command_type {
     }
     elsif ($cmd =~ /^((\d+|\/.*\/)(,(\d+|\/.*\/))?)?s/){
         return ("s");
-    }
-    elsif ($cmd =~ /^\s*(((\d+)|(\/.*?\/)|\$)\s*(,(\d+)|(\/.*?\/))?)?\s*a/){
-        return ("a");
-    }
-    elsif ($cmd =~ /^\s*(((\d+)|(\/.*?\/)|\$)\s*(,(\d+)|(\/.*?\/))?)?\s*i/){
-        return ("i");
-    }
-    elsif ($cmd =~ /^\s*(((\d+)|(\/.*?\/)|\$)\s*(,(\d+)|(\/.*?\/))?)?\s*c/){
-        return ("c");
     }
     else{
         print STDERR "speed: command line: invalid command\n";
@@ -227,12 +229,32 @@ sub commands_with_type {
     my (@cmds) = @_;
     my @new_cmds;
     foreach my $cmd (@cmds){
-        if ($cmd !~ /^\s*((\d+)|(\/.*?\/)|\$)\s*(,(\d+)|(\/.*?\/))?\s*a/
-            and $cmd !~ /^\s*((\d+)|(\/.*?\/)|\$)\s*(,(\d+)|(\/.*?\/))?\s*i/
-            and $cmd !~ /^\s*((\d+)|(\/.*?\/)|\$)\s*(,(\d+)|(\/.*?\/))?\s*c/){
+        if ($cmd !~ /^\s*(((\d+)|(\/.*?\/)|\$)\s*(,\s*((\d+)|(\/.*?\/))))?\s*a/
+                and $cmd !~ /^\s*(((\d+)|(\/.*?\/)|\$)\s*(,\s*((\d+)|(\/.*?\/))))?\s*i/
+                and $cmd !~ /^\s*(((\d+)|(\/.*?\/)|\$)\s*(,\s*((\d+)|(\/.*?\/))))?\s*c/){
+
             $cmd = rm_space($cmd);
-        }  
+        }
+        elsif ($cmd =~ /^\s*(((\d+)|(\/.*?\/)|\$)\s*(,\s*((\d+)|(\/.*?\/)))?\s*)?([aic])(.*)$/){
+            $cmd = "";
+            if (! defined $10 and defined $9){
+                print STDERR "speed: command line: invalid command";
+                exit 1;
+            }
+            if(defined $1){
+                $cmd .= rm_space($1)
+            }
+            my $addr = $9;
+            my $content = $10;
+            if ($content =~ /^\s+/){
+                $content =~ s/^\s//;
+            }
+            $cmd = $cmd . $addr . " " . $content;
+        }
         $cmd = rm_comment($cmd);
+        if ($cmd eq ""){
+            next;
+        }
         my $type = get_command_type($cmd);
         my @item = ($cmd,$type);
         push(@new_cmds,\@item);
@@ -254,7 +276,7 @@ sub exec_cmd {
     my ($item,$line,$OH) = @_; # OH stands for output handler
     my $cmd = $item -> [0];
     my $type = $item -> [1];
-
+    
     if ($type eq "q"){
         $line = q_command($cmd,$line);
     }
@@ -599,15 +621,15 @@ sub a_command {
         my $end = $2;
         my $new_content = $3;
 
-        if ($start < 0){
-            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+        if ($start <= 0){        
+            print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
         elsif ($end < 0){
             print STDERR "speed: command line: invalid command\n";
             exit 1; 
         }
-        elsif ($start==0 and $end==0){
+        elsif ($end==0){
             print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
@@ -623,6 +645,11 @@ sub a_command {
         my $start = $1;
         my $end_regex = process_back_slash($2);
         my $new_content = $3;
+
+        if ($start < 0){
+            print STDERR "speed: command line: invalid command\n";
+            exit 1;
+        }
 
         if ($start == 0){
             $start = 1;
@@ -733,15 +760,15 @@ sub i_command {
         my $end = $2;
         my $new_content = $3;
 
-        if ($start < 0){
-            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+        if ($start <= 0){        
+            print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
         elsif ($end < 0){
             print STDERR "speed: command line: invalid command\n";
             exit 1; 
         }
-        elsif ($start==0 and $end==0){
+        elsif ($end==0){
             print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
@@ -757,6 +784,11 @@ sub i_command {
         my $start = $1;
         my $end_regex = process_back_slash($2);
         my $new_content = $3;
+
+        if ($start < 0){
+            print STDERR "speed: command line: invalid command\n";
+            exit 1;
+        }
 
         if ($start == 0){
             $start = 1;
@@ -790,12 +822,13 @@ sub i_command {
         if ($line =~ /$start_regex/ and $RANGES[$index]{'RANGE_I'}==0 and $LINE_NUM>$end){
             $RANGES[$index]{'RANGE_RD_I'} = 1;
         }
+        if ($LINE_NUM == $end and $RANGES[$index]{'RANGE_I'} ==1){
+            $line =  $new_content . "\n" . $line;
+            $RANGES[$index]{'RANGE_I'} = 0;
+        } 
         if ($RANGES[$index]{'RANGE_I'}==1 or $RANGES[$index]{'RANGE_RD_I'}==1){
             $line =  $new_content . "\n" . $line;
         }
-        if ($LINE_NUM == $end){
-            $line =  $new_content . "\n" . $line;
-        } 
     }
     # 07 Change a range: REGEX - REGEX 
     elsif ($cmd =~ /^\s*\/(.*?)\/\s*,\s*\/(.*?)\/\s*i\s*(.*)$/){
@@ -867,19 +900,23 @@ sub c_command {
         my $end = $2;
         my $new_content = $3;
 
-        if ($start < 0){
-            print STDERR "usage: speed [-i] [-n] [-f <script-file> | <sed-command>] [<files>...]\n";
+        if ($start <= 0){        
+            print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
         elsif ($end < 0){
             print STDERR "speed: command line: invalid command\n";
             exit 1; 
         }
-        elsif ($start==0 and $end==0){
+        elsif ($end==0){
             print STDERR "speed: command line: invalid command\n";
             exit 1;
         }
-        elsif ($start<=$LINE_NUM and $LINE_NUM<=$end){
+        elsif ($start<=$LINE_NUM and $LINE_NUM<$end){
+            $line = "";
+            $DELETE_STATUS = 1;
+        }
+        elsif ($start <= $LINE_NUM and $LINE_NUM == $end){
             $line = $new_content;
         }
         elsif($start>$end and $start==$LINE_NUM){
@@ -887,10 +924,17 @@ sub c_command {
         }
     }
     # 05 Change between a range: DIGIT - REGEX
-    elsif ($cmd =~ /^\s*(\d+)\s*,\s*\/(.*?)\/\s*i\s*(.*)$/){
+    elsif ($cmd =~ /^\s*(\d+)\s*,\s*\/(.*?)\/\s*c\s*(.*)$/){
+        
         my $start = $1;
         my $end_regex = process_back_slash($2);
         my $new_content = $3;
+
+        
+        if ($start < 0){
+            print STDERR "speed: command line: invalid command\n";
+            exit 1;
+        }
 
         if ($start == 0){
             $start = 1;
@@ -927,8 +971,9 @@ sub c_command {
         if ($RANGES[$index]{'RANGE_C'}==1 or $RANGES[$index]{'RANGE_RD_C'}==1){
             $line =  $new_content;
         }
-        if ($LINE_NUM == $end){
+        if ($LINE_NUM == $end and $RANGES[$index]{'RANGE_C'}==1){
             $line =  $new_content;
+            $RANGES[$index]{'RANGE_C'} = 0;
         } 
     }
     # 07 Change a range: REGEX - REGEX 
@@ -1016,7 +1061,6 @@ sub process_back_slash {
                 $result .= "\$";
                 $i+=1;
                 while ($i < @pat_chars -1 and $pat_chars[$i+1] =~ /^[0-9]/){
-                    print("A number is added\n");
                     $result .= $pat_chars[$i+1];
                     $i+=1;
                 }
@@ -1243,6 +1287,7 @@ sub stdin_process {
     my $commands_len = @commands;
     initialize_ranges($commands_len);
 
+
     while (my $line = <STDIN>){
         $EXIT_STATUS = 0;
         $DELETE_STATUS = 0;
@@ -1250,14 +1295,14 @@ sub stdin_process {
         chomp $line;
         my $range_c_flag = 0;
 
-        foreach my $range (@RANGES){
-            $range{'RANGE_RD_D'} = 0;
+        for ($index=0;$index<$commands_len;$index++){
+            $RANGES[$index]{'RANGE_RD_D'} = 0;
         }
 
         if (eof){
             $LAST_LINE_FLAG = 1;
         }
-        
+
         for ($index=0;$index<$commands_len;$index++){
             my $item = $commands[$index];
             $RANGES[$index]{'RANGE_RD_P'} = 0;
@@ -1310,8 +1355,8 @@ sub file_process {
             chomp $line;
             my $range_c_flag = 0;
 
-            foreach my $range (@RANGES){
-                $range{'RANGE_RD_D'} = 0;
+            for ($index=0;$index<$commands_len;$index++){
+                $RANGES[$index]{'RANGE_RD_D'} = 0;
             }
 
             if (eof and $i==(@argvs-1)){
@@ -1374,8 +1419,9 @@ sub file_stdout_process {
             $LAST_LINE_FLAG = 0;
             chomp $line;
             my $range_c_flag = 0;
-            foreach my $range (@RANGES){
-                $range{'RANGE_RD_D'} = 0;
+            
+            for ($index=0;$index<$commands_len;$index++){
+                $RANGES[$index]{'RANGE_RD_D'} = 0;
             }
 
             if (eof and $i==(@argvs-1)){

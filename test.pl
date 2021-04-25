@@ -1,14 +1,18 @@
 #!/usr/bin/perl -w
 
 my @matches;
-my $string = "ddabdadabeew";
-my $pat = "EE\${1}EE";
+my $cmd =  '2  , 8       a hello world';
 
-# $pat = quotemeta($pat);
+my $new = "";
 
-$pat = qr /$pat/;
+if ($cmd =~ /^\s*((\d+)|(\/.*?\/)|\$)\s*(,\s*((\d+)|(\/.*?\/)))?\s*([aic])(.*)$/){
+    if ($4){
+        $new = $1 . $4 . $8 . $9;
+    } 
+    else{
+        $new = $1 . $8 .$9;
+    }
+}
 
+print("$new\n");
 
-$string =~ s/(da)b/$pat/g;
-# $string =~ s/(da)b/EE${1}EE/g;
-print("$string\n");
